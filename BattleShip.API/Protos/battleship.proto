@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option csharp_namespace = "BattleShip.API.Protos";
+
+// Message pour la requete d'attaque
+message AttackRequestGRPC {
+    string gameId = 1;
+    int32 x = 2;
+    int32 y = 3;
+}
+
+// Message pour la reponse d'attaque
+message AttackResponseGRPC {
+    bool hit = 1;
+    string message = 2;
+    int32 hitCount = 3;
+    BoardDto opponentBoard = 4;
+    BoardDto playerBoard = 5;
+    bool gameOver = 6;
+    bool playerWon = 7;
+    AIAttackDto aiAttack = 8;
+}
+
+// Grille de jeu
+message BoardDto {
+    repeated CellDto cells = 1;
+}
+
+// Cellule individuelle
+message CellDto {
+    int32 x = 1;
+    int32 y = 2;
+    bool hasShip = 3;
+    bool isHit = 4;
+}
+
+// Attaque de l'IA
+message AIAttackDto {
+    int32 x = 1;
+    int32 y = 2;
+    bool hit = 3;
+}
+
+// Service Battleship
+service BattleshipService {
+    rpc Attack(AttackRequestGRPC) returns (AttackResponseGRPC);
+}

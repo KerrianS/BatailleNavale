@@ -1,11 +1,13 @@
 using BattleShip.Models;
 using System.Net.Http.Json;
+using BattleShip.API.Protos;
 
 namespace BattleShip.App.Services;
 
 public class GameState
 {
     private readonly HttpClient _httpClient;
+    private readonly BattleshipService.BattleshipServiceClient _grpcClient;
     
     public string? GameId { get; set; }
     public Cell[,]? PlayerBoard { get; set; }
@@ -15,14 +17,15 @@ public class GameState
     public int HitCount { get; set; }
     public string Message { get; set; } = "";
 
-    public GameState(HttpClient httpClient)
+    public GameState(HttpClient httpClient, BattleshipService.BattleshipServiceClient grpcClient)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("http://localhost:5290");
+        _grpcClient = grpcClient;
     }
 
     public async Task StartNewGame()
     {
+        // Use REST endpoint for starting game (as specified in PDF)
         var response = await _httpClient.PostAsync("/game/start", null);
         var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
         
@@ -51,40 +54,59 @@ public class GameState
     {
         if (GameId == null || GameOver) return false;
 
-    var request = new BattleShip.Models.AttackRequest { X = x, Y = y };
-    var response = await _httpClient.PostAsJsonAsync($"/game/{GameId}/attack", request);
-        
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = "Erreur: " + error;
-            return false;
-        }
-
-        var result = await response.Content.ReadFromJsonAsync<AttackResponse>();
-        
-        if (result != null)
-        {
-            // Mettre à jour la grille adverse
-            OpponentBoard = ConvertToBoard(result.OpponentBoard);
+            var request = new AttackRequestGRPC 
+            { 
+                GameId = GameId,
+                X = x, 
+                Y = y 
+            };
             
-            // Mettre à jour la grille du joueur (attaque de l'IA)
-            if (result.PlayerBoard != null)
-            {
-                PlayerBoard = ConvertToBoard(result.PlayerBoard);
-            }
+            var response = await _grpcClient.AttackAsync(request);
             
-            GameOver = result.GameOver;
-            PlayerWon = result.PlayerWon;
-            HitCount = result.HitCount;
-            Message = result.Message;
+            // Update opponent board
+            OpponentBoard = ConvertGrpcBoardToArray(response.OpponentBoard);
+            
+            // Update player board (AI attack)
+            PlayerBoard = ConvertGrpcBoardToArray(response.PlayerBoard);
+            
+            GameOver = response.GameOver;
+            PlayerWon = response.PlayerWon;
+            HitCount = response.HitCount;
+            Message = response.Message;
+            
             return true;
         }
-
-        return false;
+        catch (Grpc.Core.RpcException ex)
+        {
+            Message = "Erreur gRPC: " + ex.Status.Detail;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Message = "Erreur: " + ex.Message;
+            return false;
+        }
     }
 
     private Cell[,] ConvertToBoard(BoardDto boardDto)
+    {
+        var board = new Cell[Board.Size, Board.Size];
+        
+        foreach (var cell in boardDto.Cells)
+        {
+            board[cell.X, cell.Y] = new Cell(cell.X, cell.Y)
+            {
+                HasShip = cell.HasShip,
+                IsHit = cell.IsHit
+            };
+        }
+        
+        return board;
+    }
+
+    private Cell[,] ConvertGrpcBoardToArray(API.Protos.BoardDto boardDto)
     {
         var board = new Cell[Board.Size, Board.Size];
         
@@ -104,17 +126,6 @@ public class GameState
     {
         public string GameId { get; set; } = "";
         public BoardDto PlayerBoard { get; set; } = new();
-    }
-
-    private class AttackResponse
-    {
-        public bool Hit { get; set; }
-        public string Message { get; set; } = "";
-        public int HitCount { get; set; }
-        public BoardDto OpponentBoard { get; set; } = new();
-        public BoardDto? PlayerBoard { get; set; }
-        public bool GameOver { get; set; }
-        public bool PlayerWon { get; set; }
     }
 
     private class BoardDto

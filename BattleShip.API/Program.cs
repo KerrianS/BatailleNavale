@@ -1,6 +1,7 @@
 using BattleShip.Models;
 using FluentValidation;
 using BattleShip.API.Validators;
+using BattleShip.API.Services;
 using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,8 +17,12 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Register validators
 builder.Services.AddScoped<IValidator<AttackRequest>, AttackRequestValidator>();
+
+builder.Services.AddGrpc();
+
+var games = new ConcurrentDictionary<string, Game>();
+builder.Services.AddSingleton(games);
 
 var app = builder.Build();
 
@@ -29,19 +34,19 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowBlazor");
 app.UseHttpsRedirection();
 
-var games = new ConcurrentDictionary<string, Game>();
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 
-app.MapPost("/game/start", (ILogger<Program> logger) =>
+app.MapGrpcService<BattleshipGRPCService>().EnableGrpcWeb();
+
+app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
 {
     logger.LogInformation("[NOUVELLE PARTIE] Demarrage d'une nouvelle partie...");
     
     var game = new Game();
     
-    // Placer les bateaux du joueur
     GenerateOpponentBoard(game.PlayerBoard);
     logger.LogInformation("[NOUVELLE PARTIE] Bateaux du joueur places");
     
-    // Placer les bateaux de l'adversaire
     GenerateOpponentBoard(game.OpponentBoard);
     logger.LogInformation("[NOUVELLE PARTIE] Bateaux de l'adversaire places");
     
@@ -58,7 +63,7 @@ app.MapPost("/game/start", (ILogger<Program> logger) =>
     });
 });
 
-app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromBody] AttackRequest request, IValidator<AttackRequest> validator, ILogger<Program> logger) =>
+app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromBody] AttackRequest request, IValidator<AttackRequest> validator, ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
 {
     logger.LogInformation("[ATTAQUE] Joueur attaque position ({X}, {Y}) - Game ID: {GameId}", request.X, request.Y, gameId);
 
@@ -68,7 +73,6 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         return Results.NotFound(new { message = "Partie non trouvée" });
     }
 
-    // Validate request
     var validation = validator.Validate(request);
     if (!validation.IsValid)
     {
@@ -77,7 +81,6 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         return Results.BadRequest(new { errors });
     }
 
-    // Tour du joueur
     var (hit, alreadyHit) = game.OpponentBoard.Attack(request.X, request.Y);
 
     if (alreadyHit)
@@ -101,7 +104,6 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         logger.LogInformation("[ATTAQUE] Rate a la position ({X}, {Y}) - Coups reussis joueur: {HitCount}/13", request.X, request.Y, playerHitCount);
     }
 
-    // Tour de l'IA (si le jeu n'est pas terminé)
     bool aiHit = false;
     int aiX = 0, aiY = 0;
     bool aiWon = false;
@@ -109,7 +111,6 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
 
     if (!playerWon)
     {
-        // L'IA attaque une case aléatoire non encore attaquée
         var random = new Random();
         int attempts = 0;
 
