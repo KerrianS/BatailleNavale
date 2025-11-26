@@ -1,0 +1,78 @@
+@using BattleShip.Models
+
+<div class="board-section">
+    <h3>@Title</h3>
+    <div class="board">
+        @for (int y = 0; y < Board.Size; y++)
+        {
+            @for (int x = 0; x < Board.Size; x++)
+            {
+                var cell = BoardData![x, y];
+                var cellClass = "cell";
+                
+                if (IsOpponentBoard)
+                {
+                    // Grille adverse: X = touché, O = raté, case vide = cliquable
+                    cellClass += " clickable";
+                    if (cell.IsHit && cell.HasShip) 
+                        cellClass += " ship-hit";
+                    else if (cell.IsHit) 
+                        cellClass += " miss";
+                }
+                else
+                {
+                    // Grille joueur: afficher bateaux + impacts
+                    if (cell.HasShip && cell.IsHit) cellClass += " ship-hit";
+                    else if (cell.HasShip) cellClass += " ship";
+                    else if (cell.IsHit) cellClass += " miss";
+                }
+                
+                var currentX = x;
+                var currentY = y;
+                
+                <div class="@cellClass" @onclick="() => OnCellClick.InvokeAsync((currentX, currentY))">
+                    @if (IsOpponentBoard)
+                    {
+                        @if (cell.IsHit && cell.HasShip)
+                        {
+                            <span class="hit-icon">X</span>
+                        }
+                        else if (cell.IsHit)
+                        {
+                            <span class="miss-icon">O</span>
+                        }
+                    }
+                    else
+                    {
+                        @if (cell.HasShip && cell.IsHit)
+                        {
+                            <span>X</span>
+                        }
+                        else if (cell.IsHit)
+                        {
+                            <span>O</span>
+                        }
+                        else if (cell.HasShip)
+                        {
+                            <span>■</span>
+                        }
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "";
+    
+    [Parameter]
+    public Cell[,]? BoardData { get; set; }
+    
+    [Parameter]
+    public bool IsOpponentBoard { get; set; }
+    
+    [Parameter]
+    public EventCallback<(int x, int y)> OnCellClick { get; set; }
+}

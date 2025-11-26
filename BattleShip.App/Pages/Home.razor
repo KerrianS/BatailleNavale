@@ -6,17 +6,17 @@
     
     @if (GameState.GameId == null)
     {
-        <button class="btn btn-primary btn-lg" @onclick="StartGame">Démarrer Nouvelle Partie</button>
+        <button class="btn btn-primary btn-lg" @onclick="StartGame">Demarrer Nouvelle Partie</button>
     }
     else
     {
         <div class="status-bar">
             <p><strong>@GameState.Message</strong></p>
-            <p>Coups réussis: <span class="badge bg-success">@GameState.HitCount / 13</span></p>
+            <p>Coups reussis: <span class="badge bg-success">@GameState.HitCount / 13</span></p>
             @if (GameState.GameOver)
             {
                 <div class="alert @(GameState.PlayerWon ? "alert-success" : "alert-danger")">
-                    @(GameState.PlayerWon ? "🎉 VICTOIRE !" : "Défaite")
+                    @(GameState.PlayerWon ? "VICTOIRE !" : "Defaite")
                 </div>
                 <button class="btn btn-primary" @onclick="StartGame">Nouvelle Partie</button>
             }
@@ -47,7 +47,7 @@
                                 }
                                 else if (cell.HasShip)
                                 {
-                                    <span>■</span>
+                                    <span>@GetShipLetter(cell)</span>
                                 }
                             </div>
                         }
@@ -64,20 +64,23 @@
                         {
                             var cell = GameState.OpponentBoard![x, y];
                             var cellClass = "cell clickable";
-                            if (cell.HasShip && cell.IsHit) cellClass += " ship-hit";
-                            else if (cell.IsHit) cellClass += " miss";
+                            
+                            if (cell.IsHit && cell.HasShip) 
+                                cellClass += " ship-hit";
+                            else if (cell.IsHit) 
+                                cellClass += " miss";
                             
                             var currentX = x;
                             var currentY = y;
                             
                             <div class="@cellClass" @onclick="() => Attack(currentX, currentY)">
-                                @if (cell.HasShip && cell.IsHit)
+                                @if (cell.IsHit && cell.HasShip)
                                 {
-                                    <span>X</span>
+                                    <img src="images/hit.png" alt="Touché" class="hit-icon" />
                                 }
                                 else if (cell.IsHit)
                                 {
-                                    <span>O</span>
+                                    <img src="images/miss.png" alt="Raté" class="miss-icon" />
                                 }
                             </div>
                         }
@@ -89,11 +92,6 @@
 </div>
 
 @code {
-    protected override async Task OnInitializedAsync()
-    {
-        // Auto-start is optional
-    }
-
     private async Task StartGame()
     {
         await GameState.StartNewGame();
@@ -105,9 +103,28 @@
         if (GameState.GameOver) return;
         
         var cell = GameState.OpponentBoard![x, y];
-        if (cell.IsHit) return; // Already attacked
+        if (cell.IsHit) return;
         
-        await GameState.Attack(x, y);
+        var success = await GameState.Attack(x, y);
+        
+        if (success && GameState.GameOver)
+        {
+            if (GameState.PlayerWon)
+            {
+                GameState.Message = "Vous avez gagne !";
+            }
+            else
+            {
+                GameState.Message = "Vous avez perdu";
+            }
+        }
+        
         StateHasChanged();
+    }
+    
+    private string GetShipLetter(Cell cell)
+    {
+        // Afficher une lettre pour le bateau (optionnel, selon PDF)
+        return "■";
     }
 }

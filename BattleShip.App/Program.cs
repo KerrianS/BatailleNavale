@@ -7,7 +7,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// Configurer le HttpClient avec l'adresse de l'API comme BaseAddress
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5290") });
 builder.Services.AddScoped<GameState>();
 
 await builder.Build().RunAsync();
