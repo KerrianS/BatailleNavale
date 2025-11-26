@@ -40,6 +40,9 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Case déjà attaquée"));
         }
 
+        // Enregistrer l'attaque du joueur dans l'historique
+        game.History.Add(new AttackHistory(request.X, request.Y, hit, true));
+
         int playerHitCount = CountHits(game.OpponentBoard);
         bool playerWon = playerHitCount >= 13;
         string message = "";
@@ -81,6 +84,9 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
             {
                 var (aiHitResult, _) = game.PlayerBoard.Attack(aiX, aiY);
                 aiHit = aiHitResult;
+
+                // Enregistrer l'attaque de l'IA dans l'historique
+                game.History.Add(new AttackHistory(aiX, aiY, aiHit, false));
 
                 int aiHitCount = CountHits(game.PlayerBoard);
                 aiWon = aiHitCount >= 13;

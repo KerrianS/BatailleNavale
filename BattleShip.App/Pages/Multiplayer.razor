@@ -1,0 +1,401 @@
+@page "/multiplayer"
+@using BattleShip.Models
+@using BattleShip.App.Services
+@using BattleShip.App.Components
+@using Microsoft.AspNetCore.Components
+@inject MultiplayerGameService MultiplayerService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<h1 class="page-title">Bataille Navale - Multijoueur</h1>
+
+<div class="multiplayer-container">
+    @if (CurrentPhase == GamePhase.Lobby)
+    {
+        <div class="lobby">
+            <h1>Mode Multijoueur</h1>
+            <div class="lobby-form">
+                <label>Votre nom:</label>
+                <input type="text" @bind="PlayerName" placeholder="Entrez votre nom" />
+                <button class="join-button" @onclick="JoinGame" disabled="@string.IsNullOrWhiteSpace(PlayerName)">
+                    Rejoindre une partie
+                </button>
+                <button class="back-button" @onclick="GoBack">
+                    Retour
+                </button>
+            </div>
+        </div>
+    }
+    else if (CurrentPhase == GamePhase.WaitingForOpponent)
+    {
+        <div class="waiting">
+            <h2>En attente d'un adversaire...</h2>
+            <div class="spinner"></div>
+            <button class="cancel-button" @onclick="CancelWaiting">Annuler</button>
+        </div>
+    }
+    else if (CurrentPhase == GamePhase.Placement)
+    {
+        <div class="placement-phase">
+            <h2>Placez vos bateaux</h2>
+            @if (!string.IsNullOrEmpty(OpponentName))
+            {
+                <p>Adversaire: <strong>@OpponentName</strong></p>
+            }
+            @if (OpponentReady)
+            {
+                <p class="opponent-status">✓ Votre adversaire est prêt</p>
+            }
+            <ShipPlacementUI OnPlacementsConfirmed="OnShipsPlaced" />
+        </div>
+    }
+    else if (CurrentPhase == GamePhase.Playing)
+    {
+        <div class="game-phase">
+            <h1>Bataille Navale - Multijoueur</h1>
+            
+            <div class="game-info">
+                <div class="player-info">
+                    <p><strong>Vous</strong> vs <strong>@OpponentName</strong></p>
+                    <p class="turn-indicator @(IsMyTurn ? "my-turn" : "opponent-turn")">
+                        @(IsMyTurn ? "🎯 C'est votre tour" : "⏳ Tour de l'adversaire")
+                    </p>
+                </div>
+                <button class="leave-button" @onclick="LeaveGame">Quitter</button>
+            </div>
+
+            <div class="boards-container">
+                <div class="board-section">
+                    <h3>Votre grille</h3>
+                    <div class="game-board">
+                        @for (int y = 0; y < Board.Size; y++)
+                        {
+                            <div class="board-row">
+                                @for (int x = 0; x < Board.Size; x++)
+                                {
+                                    var cell = MultiplayerService.MyBoard?.Grid[x, y];
+                                    <div class="board-cell @GetMyCellClass(cell)">
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="board-section">
+                    <h3>Grille adverse</h3>
+                    <div class="game-board">
+                        @for (int y = 0; y < Board.Size; y++)
+                        {
+                            <div class="board-row">
+                                @for (int x = 0; x < Board.Size; x++)
+                                {
+                                    var xCopy = x;
+                                    var yCopy = y;
+                                    var cell = MultiplayerService.OpponentBoard?.Grid[x, y];
+                                    <div class="board-cell @GetOpponentCellClass(cell) @(IsMyTurn && !cell?.IsHit == true ? "clickable" : "")"
+                                         @onclick="() => Attack(xCopy, yCopy)">
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (MultiplayerService.History.Count > 0)
+            {
+                <div class="history-section">
+                    <h3>Historique (10 derniers coups)</h3>
+                    <div class="history-list">
+                        @foreach (var attack in MultiplayerService.History.TakeLast(10).Reverse())
+                        {
+                            <div class="history-item @(attack.IsPlayer ? "player-move" : "opponent-move")">
+                                <span class="player-name">@(attack.IsPlayer ? "Vous" : OpponentName)</span>
+                                <span class="coordinates">(@attack.X, @attack.Y)</span>
+                                <span class="result">@(attack.Hit ? "Touché ✓" : "Raté ✗")</span>
+                                <span class="timestamp">@attack.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (CurrentPhase == GamePhase.GameOver)
+    {
+        <div class="game-over">
+            <h1>@GameOverMessage</h1>
+            <button class="new-game-button" @onclick="StartNewGame">Nouvelle partie</button>
+            <button class="back-button" @onclick="GoBack">Menu principal</button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="message-box @MessageClass">
+            @Message
+        </div>
+    }
+</div>
+
+@code {
+    private enum GamePhase
+    {
+        Lobby,
+        WaitingForOpponent,
+        Placement,
+        Playing,
+        GameOver
+    }
+
+    private GamePhase CurrentPhase { get; set; } = GamePhase.Lobby;
+    private string PlayerName { get; set; } = "";
+    private string? OpponentName { get; set; }
+    private bool OpponentReady { get; set; }
+    private bool IsMyTurn { get; set; }
+    private string Message { get; set; } = "";
+    private string MessageClass { get; set; } = "";
+    private string GameOverMessage { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await MultiplayerService.InitializeAsync();
+
+        MultiplayerService.OnWaitingForOpponent += HandleWaitingForOpponent;
+        MultiplayerService.OnGameJoined += HandleGameJoined;
+        MultiplayerService.OnOpponentJoined += HandleOpponentJoined;
+        MultiplayerService.OnOpponentReady += HandleOpponentReady;
+        MultiplayerService.OnGameStarted += HandleGameStarted;
+        MultiplayerService.OnAttackResult += HandleAttackResult;
+        MultiplayerService.OnOpponentAttacked += HandleOpponentAttacked;
+        MultiplayerService.OnYourTurn += HandleYourTurn;
+        MultiplayerService.OnGameWon += HandleGameWon;
+        MultiplayerService.OnGameLost += HandleGameLost;
+        MultiplayerService.OnOpponentDisconnected += HandleOpponentDisconnected;
+    }
+
+    private async Task JoinGame()
+    {
+        CurrentPhase = GamePhase.WaitingForOpponent;
+        await MultiplayerService.JoinGameAsync(PlayerName);
+    }
+
+    private void HandleWaitingForOpponent(string message)
+    {
+        Message = message;
+        StateHasChanged();
+    }
+
+    private void HandleGameJoined(string gameId, string opponentName)
+    {
+        OpponentName = opponentName;
+        CurrentPhase = GamePhase.Placement;
+        Message = $"Adversaire trouvé: {opponentName}";
+        StateHasChanged();
+    }
+
+    private void HandleOpponentJoined(string gameId, string opponentName)
+    {
+        OpponentName = opponentName;
+        CurrentPhase = GamePhase.Placement;
+        Message = $"Adversaire trouvé: {opponentName}";
+        StateHasChanged();
+    }
+
+    private void HandleOpponentReady()
+    {
+        OpponentReady = true;
+        Message = "Votre adversaire est prêt";
+        StateHasChanged();
+    }
+
+    private void HandleGameStarted(string currentTurnPlayerId)
+    {
+        CurrentPhase = GamePhase.Playing;
+        IsMyTurn = MultiplayerService.IsMyTurn;
+        Message = IsMyTurn ? "La partie commence ! C'est votre tour" : "La partie commence ! Tour de l'adversaire";
+        StateHasChanged();
+    }
+
+    private async Task OnShipsPlaced(List<BattleShip.Models.ShipPlacement> placements)
+    {
+        await MultiplayerService.PlaceShipsAsync(placements);
+        Message = "En attente de l'adversaire...";
+        StateHasChanged();
+    }
+
+    private async Task Attack(int x, int y)
+    {
+        if (!IsMyTurn || CurrentPhase != GamePhase.Playing) return;
+
+        var cell = MultiplayerService.OpponentBoard?.Grid[x, y];
+        if (cell?.IsHit == true) return;
+
+        try
+        {
+            await MultiplayerService.AttackAsync(x, y);
+        }
+        catch (Exception ex)
+        {
+            Message = $"Erreur: {ex.Message}";
+            MessageClass = "error";
+            StateHasChanged();
+        }
+    }
+
+    private void HandleAttackResult(int x, int y, bool hit, bool sunk, bool gameOver)
+    {
+        IsMyTurn = MultiplayerService.IsMyTurn;
+        
+        if (gameOver)
+        {
+            // Will be handled by OnGameWon
+            return;
+        }
+
+        if (hit)
+        {
+            Message = sunk ? "Touché-Coulé !" : "Touché !";
+            MessageClass = "success";
+        }
+        else
+        {
+            Message = "Raté";
+            MessageClass = "info";
+        }
+        
+        StateHasChanged();
+    }
+
+    private void HandleOpponentAttacked(int x, int y, bool hit, bool sunk, bool gameOver)
+    {
+        if (gameOver)
+        {
+            // Will be handled by OnGameLost
+            return;
+        }
+
+        if (hit)
+        {
+            Message = sunk ? "L'adversaire a coulé votre bateau !" : "L'adversaire a touché votre bateau";
+            MessageClass = "warning";
+        }
+        else
+        {
+            Message = "L'adversaire a raté";
+            MessageClass = "info";
+        }
+        
+        StateHasChanged();
+    }
+
+    private void HandleYourTurn()
+    {
+        IsMyTurn = true;
+        Message = "C'est votre tour !";
+        MessageClass = "info";
+        StateHasChanged();
+    }
+
+    private void HandleGameWon()
+    {
+        CurrentPhase = GamePhase.GameOver;
+        GameOverMessage = "🎉 Victoire ! Vous avez gagné !";
+        StateHasChanged();
+    }
+
+    private void HandleGameLost()
+    {
+        CurrentPhase = GamePhase.GameOver;
+        GameOverMessage = "😢 Défaite ! Vous avez perdu.";
+        StateHasChanged();
+    }
+
+    private void HandleOpponentDisconnected()
+    {
+        Message = "L'adversaire s'est déconnecté";
+        MessageClass = "error";
+        CurrentPhase = GamePhase.GameOver;
+        GameOverMessage = "L'adversaire s'est déconnecté";
+        StateHasChanged();
+    }
+
+    private async Task CancelWaiting()
+    {
+        await MultiplayerService.DisconnectAsync();
+        CurrentPhase = GamePhase.Lobby;
+        Message = "";
+        StateHasChanged();
+    }
+
+    private async Task LeaveGame()
+    {
+        await MultiplayerService.DisconnectAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private async Task StartNewGame()
+    {
+        await MultiplayerService.DisconnectAsync();
+        CurrentPhase = GamePhase.Lobby;
+        OpponentName = null;
+        OpponentReady = false;
+        Message = "";
+        GameOverMessage = "";
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private string GetMyCellClass(Cell? cell)
+    {
+        if (cell == null) return "";
+        
+        var classes = new List<string>();
+        
+        if (cell.HasShip)
+        {
+            classes.Add("ship");
+        }
+        
+        if (cell.IsHit)
+        {
+            classes.Add(cell.HasShip ? "hit" : "miss");
+        }
+        
+        return string.Join(" ", classes);
+    }
+
+    private string GetOpponentCellClass(Cell? cell)
+    {
+        if (cell == null) return "";
+        
+        var classes = new List<string>();
+        
+        if (cell.IsHit)
+        {
+            classes.Add(cell.HasShip ? "hit" : "miss");
+        }
+        
+        return string.Join(" ", classes);
+    }
+
+    public void Dispose()
+    {
+        MultiplayerService.OnWaitingForOpponent -= HandleWaitingForOpponent;
+        MultiplayerService.OnGameJoined -= HandleGameJoined;
+        MultiplayerService.OnOpponentJoined -= HandleOpponentJoined;
+        MultiplayerService.OnOpponentReady -= HandleOpponentReady;
+        MultiplayerService.OnGameStarted -= HandleGameStarted;
+        MultiplayerService.OnAttackResult -= HandleAttackResult;
+        MultiplayerService.OnOpponentAttacked -= HandleOpponentAttacked;
+        MultiplayerService.OnYourTurn -= HandleYourTurn;
+        MultiplayerService.OnGameWon -= HandleGameWon;
+        MultiplayerService.OnGameLost -= HandleGameLost;
+        MultiplayerService.OnOpponentDisconnected -= HandleOpponentDisconnected;
+    }
+}

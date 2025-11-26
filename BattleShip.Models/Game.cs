@@ -6,6 +6,7 @@ public class Game
     public Board PlayerBoard { get; set; }
     public Board OpponentBoard { get; set; }
     public DateTime CreatedAt { get; set; }
+    public List<AttackHistory> History { get; set; }
 
     public Game()
     {
@@ -13,5 +14,6 @@ public class Game
         PlayerBoard = new Board();
         OpponentBoard = new Board();
         CreatedAt = DateTime.UtcNow;
+        History = new List<AttackHistory>();
     }
 }

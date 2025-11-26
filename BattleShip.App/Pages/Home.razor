@@ -1,12 +1,26 @@
 ﻿@page "/"
+@using BattleShip.Models
+@using BattleShip.App.Components
 @inject GameState GameState
+@inject NavigationManager Navigation
 
 <div class="container">
     <h1>Bataille Navale</h1>
     
-    @if (GameState.GameId == null)
+    @if (GameState.GameId == null && !IsPlacingShips)
     {
-        <button class="btn btn-primary btn-lg" @onclick="StartGame">Demarrer Nouvelle Partie</button>
+        <div class="menu-buttons">
+            <button class="btn btn-primary btn-lg" @onclick="StartPlacement">Jouer contre l'IA</button>
+            <button class="btn btn-success btn-lg" @onclick="GoToMultiplayer">Mode Multijoueur</button>
+        </div>
+    }
+    else if (IsPlacingShips)
+    {
+        <div class="placement-phase">
+            <h2>Placez vos bateaux avant de commencer</h2>
+            <ShipPlacementUI OnPlacementsConfirmed="OnShipsPlaced" />
+            <button class="btn btn-secondary mt-3" @onclick="CancelPlacement">Annuler</button>
+        </div>
     }
     else
     {
@@ -88,10 +102,52 @@
                 </div>
             </div>
         </div>
+
+        @if (GameState.History.Count > 0)
+        {
+            <div class="history-section mt-4">
+                <h3>Historique des coups</h3>
+                <div class="history-list">
+                    @foreach (var move in GameState.History.AsEnumerable().Reverse().Take(10))
+                    {
+                        <div class="history-item @(move.IsPlayer ? "player-move" : "ai-move")">
+                            <span class="move-player">@(move.IsPlayer ? "Vous" : "IA")</span>
+                            <span class="move-coords">(@move.X, @move.Y)</span>
+                            <span class="move-result @(move.Hit ? "hit" : "miss")">
+                                @(move.Hit ? "Touché !" : "Raté")
+                            </span>
+                            <span class="move-time">@move.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     }
 </div>
 
 @code {
+    private bool IsPlacingShips = false;
+    private List<BattleShip.Models.ShipPlacement>? PlayerPlacements = null;
+
+    private void StartPlacement()
+    {
+        IsPlacingShips = true;
+    }
+
+    private void CancelPlacement()
+    {
+        IsPlacingShips = false;
+        PlayerPlacements = null;
+    }
+
+    private async Task OnShipsPlaced(List<BattleShip.Models.ShipPlacement> placements)
+    {
+        PlayerPlacements = placements;
+        IsPlacingShips = false;
+        await GameState.StartNewGameWithPlacements(placements);
+        StateHasChanged();
+    }
+
     private async Task StartGame()
     {
         await GameState.StartNewGame();
@@ -120,6 +176,11 @@
         }
         
         StateHasChanged();
+    }
+    
+    private void GoToMultiplayer()
+    {
+        Navigation.NavigateTo("/multiplayer");
     }
     
     private string GetShipLetter(Cell cell)

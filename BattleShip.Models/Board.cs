@@ -65,4 +65,33 @@ public class Board
         cell.IsHit = true;
         return (cell.HasShip, false);
     }
+
+    public bool ReceiveAttack(int x, int y)
+    {
+        if (x < 0 || x >= Size || y < 0 || y >= Size)
+            return false;
+
+        var cell = Grid[x, y];
+        cell.IsHit = true;
+        return cell.HasShip;
+    }
+
+    public Ship? GetShipAt(int x, int y)
+    {
+        // TODO: Implement ship tracking
+        return null;
+    }
+
+    public bool AllShipsSunk()
+    {
+        for (int x = 0; x < Size; x++)
+        {
+            for (int y = 0; y < Size; y++)
+            {
+                if (Grid[x, y].HasShip && !Grid[x, y].IsHit)
+                    return false;
+            }
+        }
+        return true;
+    }
 }

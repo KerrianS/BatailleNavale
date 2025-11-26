@@ -1,84 +1,88 @@
-# Bataille Navale - ASP.NET Core MVC
+# Bataille Navale - TP C#/.NET
 
-Application web de Bataille Navale développée en ASP.NET Core 8.0 avec le pattern MVC.
+## 👥 Groupe
+- **SALAÜN Kerrian**
+- **VIDAL Odilon**
+- **DIMECK Raphaël**
 
-## Structure du projet
+## 📝 Description
+Application de jeu de bataille navale développée en ASP.NET Core et Blazor WebAssembly avec communication gRPC-Web.
+
+## 🏗️ Architecture
+- **BattleShip.API** : API ASP.NET Core Minimal avec gRPC
+- **BattleShip.App** : Client Blazor WebAssembly
+- **BattleShip.Models** : Bibliothèque de modèles partagés
+
+## 🚀 Technologies utilisées
+- .NET 10.0
+- ASP.NET Core Minimal API
+- Blazor WebAssembly
+- gRPC & gRPC-Web
+- FluentValidation
+
+## ✅ Fonctionnalités implémentées (Étapes 1-9)
+- ✅ Placement aléatoire des bateaux (5 navires : 5,4,3,3,2 cases)
+- ✅ Système d'attaque joueur vs IA
+- ✅ Détection de fin de partie (13 coups réussis)
+- ✅ Validation des coordonnées avec FluentValidation
+- ✅ Communication REST + gRPC-Web
+- ✅ Interface Blazor avec double grille (joueur + adversaire)
+- ✅ IA avec attaque aléatoire
+- ✅ Injection de dépendances pour le client gRPC
+
+## 📋 Fonctionnalités à implémenter (TP)
+- [ ] **Historique des batailles** - Afficher les coups joués et pouvoir revenir en arrière
+- [ ] **Leaderboard** - Classement et statistiques des joueurs
+- [ ] **Mode multi-joueur** - Entre deux joueurs humains avec SignalR
+- [ ] **Recommencer une partie** - Bouton pour relancer sans recharger
+- [ ] **Images des bateaux** - Remplacer les lettres par des sprites
+- [ ] **Placement manuel** - Permettre au joueur de placer ses bateaux
+- [ ] **Sécurité** - Authentification avec Auth0
+- [ ] **IA améliorée** - Attaque intelligente par périmètre
+- [ ] **Niveaux de difficulté** - Taille de grille et intelligence IA variables
+
+## 🎮 Lancement
+```bash
+./start.sh
+```
+
+## 🌐 URLs
+- **Application Blazor** : http://localhost:5208
+- **API (gRPC + REST)** : http://localhost:5001
+- **API (legacy REST)** : http://localhost:5224
+
+## 📦 Structure du projet
 
 ```
 BatailleNavale/
-├── Controllers/
-│   ├── HomeController.cs
-│   └── GameController.cs
-├── Models/
-│   ├── Enums/
-│   │   ├── CellState.cs
-│   │   ├── GameStatus.cs
-│   │   ├── Orientation.cs
-│   │   └── ShipType.cs
-│   ├── Board.cs
+├── BattleShip.API/
+│   ├── Services/
+│   │   └── BattleshipGRPCService.cs
+│   ├── Protos/
+│   │   └── battleship.proto
+│   ├── Validators/
+│   │   └── AttackRequestValidator.cs
+│   └── Program.cs
+├── BattleShip.App/
+│   ├── Services/
+│   │   └── GameState.cs
+│   ├── Pages/
+│   │   └── Home.razor
+│   └── Program.cs
+├── BattleShip.Models/
 │   ├── Cell.cs
+│   ├── Board.cs
 │   ├── Game.cs
-│   ├── Player.cs
-│   └── Ship.cs
-├── Services/
-│   ├── Interfaces/
-│   │   └── IGameService.cs
-│   └── GameService.cs
-├── ViewModels/
-│   ├── AttackViewModel.cs
-│   ├── GameViewModel.cs
-│   └── PlaceShipViewModel.cs
-├── Views/
-│   ├── Game/
-│   │   ├── Create.cshtml
-│   │   ├── Index.cshtml
-│   │   ├── Join.cshtml
-│   │   ├── Play.cshtml
-│   │   └── Setup.cshtml
-│   ├── Home/
-│   │   └── Index.cshtml
-│   └── Shared/
-│       └── _Layout.cshtml
-├── wwwroot/
-│   └── css/
-│       └── site.css
-├── Program.cs
-└── appsettings.json
+│   └── AttackRequest.cs
+├── start.sh
+└── README.md
 ```
 
-## Fonctionnalités
+## 🎯 Règles du jeu
+- Grille de 10x10
+- 5 navires à placer : Porte-avions (5), Croiseur (4), Contre-torpilleur (3), Sous-marin (3), Torpilleur (2)
+- **13 coups réussis** pour gagner (total des cases occupées)
+- L'IA joue automatiquement après chaque coup du joueur
 
-- Création de partie
-- Rejoindre une partie existante
-- Placement des navires (5 types de navires)
-- Jeu en tour par tour
-- Détection des coups réussis et ratés
-- Détection des navires coulés
-- Détermination du gagnant
-
-## Types de navires
-
-1. Porte-avions (5 cases)
-2. Croiseur (4 cases)
-3. Contre-torpilleur (3 cases)
-4. Sous-marin (3 cases)
-5. Torpilleur (2 cases)
-
-## Lancement du projet
-
-```bash
-cd BatailleNavale
-dotnet restore
-dotnet build
-dotnet run
-```
-
-L'application sera accessible sur https://localhost:5001 ou http://localhost:5000
-
-## Technologies utilisées
-
-- ASP.NET Core 8.0
-- C# 12
-- Razor Pages
-- Bootstrap 5
-- JavaScript vanilla
+## 📧 Contact
+Envoi du lien GitHub à : **contact@hts-learning.com**

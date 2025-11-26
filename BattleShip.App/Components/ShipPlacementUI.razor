@@ -1,0 +1,233 @@
+@using BattleShip.Models
+@inject IJSRuntime JSRuntime
+
+<div class="ship-placement-container">
+    <h2>Placez vos bateaux</h2>
+    
+    <div class="ship-selection">
+        <h3>Bateaux à placer:</h3>
+        @foreach (var ship in RemainingShips)
+        {
+            <button class="ship-button @(SelectedShipSize == ship.Size ? "selected" : "")" 
+                    @onclick="() => SelectShip(ship)">
+                @ship.Name (@ship.Size cases)
+            </button>
+        }
+    </div>
+
+    <div class="placement-controls">
+        <button class="orientation-button" @onclick="ToggleOrientation">
+            Orientation: @(IsHorizontal ? "Horizontale" : "Verticale")
+        </button>
+        <button class="reset-button" @onclick="ResetPlacements">
+            Recommencer
+        </button>
+    </div>
+
+    <div class="placement-grid">
+        @for (int y = 0; y < Board.Size; y++)
+        {
+            <div class="grid-row">
+                @for (int x = 0; x < Board.Size; x++)
+                {
+                    var cell = PlacementBoard.Grid[x, y];
+                    var xCopy = x;
+                    var yCopy = y;
+                    
+                    <div class="grid-cell @GetCellClass(cell) @GetHoverClass(xCopy, yCopy)"
+                         @onclick="() => PlaceShip(xCopy, yCopy)"
+                         @onmouseover="() => HoverCell(xCopy, yCopy)"
+                         @onmouseout="ClearHover">
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (RemainingShips.Count == 0)
+    {
+        <button class="ready-button" @onclick="OnConfirmPlacement">
+            Confirmer le placement
+        </button>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="error-message">@ErrorMessage</div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<List<ShipPlacement>> OnPlacementsConfirmed { get; set; }
+
+    private Board PlacementBoard { get; set; } = new Board();
+    private List<ShipPlacement> Placements { get; set; } = new();
+    private List<ShipInfo> RemainingShips { get; set; } = new();
+    private int SelectedShipSize { get; set; } = 0;
+    private bool IsHorizontal { get; set; } = true;
+    private int HoverX { get; set; } = -1;
+    private int HoverY { get; set; } = -1;
+    private string ErrorMessage { get; set; } = "";
+
+    private class ShipInfo
+    {
+        public string Name { get; set; } = "";
+        public int Size { get; set; }
+        public ShipType Type { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        InitializeShips();
+    }
+
+    private void InitializeShips()
+    {
+        RemainingShips = new List<ShipInfo>
+        {
+            new ShipInfo { Name = "Porte-avions", Size = 5, Type = ShipType.Carrier },
+            new ShipInfo { Name = "Croiseur", Size = 4, Type = ShipType.Battleship },
+            new ShipInfo { Name = "Contre-torpilleur", Size = 3, Type = ShipType.Cruiser },
+            new ShipInfo { Name = "Sous-marin", Size = 3, Type = ShipType.Submarine },
+            new ShipInfo { Name = "Torpilleur", Size = 2, Type = ShipType.Destroyer }
+        };
+        
+        if (RemainingShips.Count > 0)
+        {
+            SelectedShipSize = RemainingShips[0].Size;
+        }
+    }
+
+    private void SelectShip(ShipInfo ship)
+    {
+        SelectedShipSize = ship.Size;
+        ErrorMessage = "";
+    }
+
+    private void ToggleOrientation()
+    {
+        IsHorizontal = !IsHorizontal;
+        ErrorMessage = "";
+    }
+
+    private void ResetPlacements()
+    {
+        PlacementBoard = new Board();
+        Placements.Clear();
+        InitializeShips();
+        ErrorMessage = "";
+    }
+
+    private void HoverCell(int x, int y)
+    {
+        HoverX = x;
+        HoverY = y;
+    }
+
+    private void ClearHover()
+    {
+        HoverX = -1;
+        HoverY = -1;
+    }
+
+    private void PlaceShip(int x, int y)
+    {
+        if (SelectedShipSize == 0 || RemainingShips.Count == 0)
+        {
+            ErrorMessage = "Sélectionnez un bateau à placer";
+            return;
+        }
+
+        if (!PlacementBoard.CanPlaceShip(x, y, SelectedShipSize, IsHorizontal))
+        {
+            ErrorMessage = "Impossible de placer le bateau ici";
+            return;
+        }
+
+        PlacementBoard.PlaceShip(x, y, SelectedShipSize, IsHorizontal);
+        
+        var currentShip = RemainingShips.First(s => s.Size == SelectedShipSize);
+        Placements.Add(new ShipPlacement
+        {
+            X = x,
+            Y = y,
+            Size = SelectedShipSize,
+            IsHorizontal = IsHorizontal,
+            ShipType = currentShip.Type
+        });
+
+        RemainingShips.RemoveAt(RemainingShips.FindIndex(s => s.Size == SelectedShipSize));
+        
+        if (RemainingShips.Count > 0)
+        {
+            SelectedShipSize = RemainingShips[0].Size;
+        }
+        else
+        {
+            SelectedShipSize = 0;
+        }
+
+        ErrorMessage = "";
+    }
+
+    private async Task OnConfirmPlacement()
+    {
+        await OnPlacementsConfirmed.InvokeAsync(Placements);
+    }
+
+    private string GetCellClass(Cell cell)
+    {
+        if (cell.HasShip)
+        {
+            return "has-ship";
+        }
+        return "";
+    }
+
+    private string GetHoverClass(int x, int y)
+    {
+        if (SelectedShipSize == 0 || HoverX == -1 || HoverY == -1) return "";
+        
+        if (HoverX == x && HoverY == y)
+        {
+            // Check if placement is valid
+            bool canPlace = PlacementBoard.CanPlaceShip(x, y, SelectedShipSize, IsHorizontal);
+            
+            if (IsHorizontal)
+            {
+                if (x >= HoverX && x < HoverX + SelectedShipSize && y == HoverY)
+                {
+                    return canPlace ? "hover-valid" : "hover-invalid";
+                }
+            }
+            else
+            {
+                if (y >= HoverY && y < HoverY + SelectedShipSize && x == HoverX)
+                {
+                    return canPlace ? "hover-valid" : "hover-invalid";
+                }
+            }
+        }
+        
+        // Show hover preview on adjacent cells
+        if (IsHorizontal)
+        {
+            if (y == HoverY && x > HoverX && x < HoverX + SelectedShipSize)
+            {
+                bool canPlace = PlacementBoard.CanPlaceShip(HoverX, HoverY, SelectedShipSize, IsHorizontal);
+                return canPlace ? "hover-valid" : "hover-invalid";
+            }
+        }
+        else
+        {
+            if (x == HoverX && y > HoverY && y < HoverY + SelectedShipSize)
+            {
+                bool canPlace = PlacementBoard.CanPlaceShip(HoverX, HoverY, SelectedShipSize, IsHorizontal);
+                return canPlace ? "hover-valid" : "hover-invalid";
+            }
+        }
+        
+        return "";
+    }
+}

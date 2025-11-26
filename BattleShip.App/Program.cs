@@ -20,5 +20,6 @@ builder.Services.AddScoped(sp =>
 });
 
 builder.Services.AddScoped<GameState>();
+builder.Services.AddScoped<MultiplayerGameService>();
 
 await builder.Build().RunAsync();

@@ -229,3 +229,488 @@ code {
     padding: 15px 30px;
     font-size: 1.2em;
 }
+
+/* Historique des coups */
+.history-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.history-section h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.history-item.player-move {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.history-item.ai-move {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.history-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.move-player {
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.move-coords {
+    color: #666;
+    font-family: monospace;
+    min-width: 60px;
+    text-align: center;
+}
+
+.move-result {
+    font-weight: bold;
+    min-width: 80px;
+    text-align: center;
+}
+
+.move-result.hit {
+    color: #e74c3c;
+}
+
+.move-result.miss {
+    color: #95a5a6;
+}
+
+.move-time {
+    color: #999;
+    font-size: 0.9em;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* Menu Buttons */
+.menu-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
+
+/* Ship Placement Component */
+.ship-placement-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.ship-selection {
+    margin: 20px 0;
+}
+
+.ship-selection h3 {
+    margin-bottom: 10px;
+}
+
+.ship-button {
+    display: inline-block;
+    margin: 5px;
+    padding: 10px 15px;
+    background: #e0e0e0;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ship-button.selected {
+    background: #4a90e2;
+    color: white;
+    border-color: #2c5aa0;
+}
+
+.ship-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.placement-controls {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.orientation-button, .reset-button {
+    padding: 10px 20px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.orientation-button:hover, .reset-button:hover {
+    background: #545b62;
+    transform: translateY(-2px);
+}
+
+.placement-grid {
+    display: inline-block;
+    margin: 20px 0;
+}
+
+.grid-row {
+    display: flex;
+}
+
+.grid-cell {
+    width: 40px;
+    height: 40px;
+    background: #e0e0e0;
+    border: 1px solid #999;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.grid-cell.has-ship {
+    background: #4a90e2;
+}
+
+.grid-cell.hover-valid {
+    background: #81c784;
+}
+
+.grid-cell.hover-invalid {
+    background: #e57373;
+}
+
+.grid-cell:hover {
+    transform: scale(1.05);
+}
+
+.ready-button {
+    padding: 15px 30px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: all 0.2s;
+}
+
+.ready-button:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.error-message {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+}
+
+/* Multiplayer Page */
+.multiplayer-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.lobby {
+    text-align: center;
+    padding: 40px;
+}
+
+.lobby h1 {
+    margin-bottom: 30px;
+}
+
+.lobby-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.lobby-form label {
+    font-weight: bold;
+}
+
+.lobby-form input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.join-button, .back-button, .cancel-button, .leave-button, .new-game-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.2s;
+}
+
+.join-button {
+    background: #28a745;
+    color: white;
+}
+
+.join-button:hover:not(:disabled) {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.join-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.back-button {
+    background: #6c757d;
+    color: white;
+}
+
+.back-button:hover {
+    background: #545b62;
+}
+
+.cancel-button {
+    background: #dc3545;
+    color: white;
+}
+
+.cancel-button:hover {
+    background: #c82333;
+}
+
+.leave-button {
+    background: #ffc107;
+    color: #000;
+}
+
+.leave-button:hover {
+    background: #e0a800;
+}
+
+.new-game-button {
+    background: #007bff;
+    color: white;
+}
+
+.new-game-button:hover {
+    background: #0056b3;
+}
+
+.waiting {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 30px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.placement-phase {
+    text-align: center;
+    padding: 20px;
+}
+
+.opponent-status {
+    color: #28a745;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.game-phase {
+    padding: 20px;
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.player-info p {
+    margin: 5px 0;
+}
+
+.turn-indicator {
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.turn-indicator.my-turn {
+    background: #d4edda;
+    color: #155724;
+}
+
+.turn-indicator.opponent-turn {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.boards-container {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.board-section {
+    text-align: center;
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 1px;
+    background: #333;
+    padding: 2px;
+    border-radius: 4px;
+    max-width: 400px;
+}
+
+.board-row {
+    display: contents;
+}
+
+.board-cell {
+    width: 38px;
+    height: 38px;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.board-cell.ship {
+    background: #4a90e2;
+}
+
+.board-cell.hit {
+    background: #e74c3c;
+}
+
+.board-cell.miss {
+    background: #95a5a6;
+}
+
+.board-cell.clickable {
+    cursor: pointer;
+}
+
+.board-cell.clickable:hover {
+    background: #c0c0c0;
+    transform: scale(1.1);
+}
+
+.game-over {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.game-over h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+}
+
+.message-box {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.message-box.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message-box.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.message-box.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.message-box.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}

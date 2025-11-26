@@ -2,6 +2,7 @@ using BattleShip.Models;
 using FluentValidation;
 using BattleShip.API.Validators;
 using BattleShip.API.Services;
+using BattleShip.API.Hubs;
 using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,14 +12,21 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(
+                "http://localhost:5208", 
+                "https://localhost:5208",
+                "http://localhost:5001", 
+                "https://localhost:5001",
+                "http://localhost:5000")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
 builder.Services.AddScoped<IValidator<AttackRequest>, AttackRequestValidator>();
 
+builder.Services.AddSignalR();
 builder.Services.AddGrpc();
 
 var games = new ConcurrentDictionary<string, Game>();
@@ -32,11 +40,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowBlazor");
-app.UseHttpsRedirection();
 
 app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 
-app.MapGrpcService<BattleshipGRPCService>().EnableGrpcWeb();
+app.MapGrpcService<BattleshipGRPCService>().EnableGrpcWeb().RequireCors("AllowBlazor");
+app.MapHub<GameHub>("/gamehub").RequireCors("AllowBlazor");
 
 app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
 {
@@ -61,7 +69,7 @@ app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string
         gameId = game.Id,
         playerBoard = ConvertBoardToDto(game.PlayerBoard, true)
     });
-});
+}).RequireCors("AllowBlazor");
 
 app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromBody] AttackRequest request, IValidator<AttackRequest> validator, ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
 {
@@ -171,7 +179,7 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         playerWon,
         aiAttack = foundTarget ? new { x = aiX, y = aiY, hit = aiHit } : null
     });
-});
+}).RequireCors("AllowBlazor");
 
 app.Run();
 

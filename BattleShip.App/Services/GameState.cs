@@ -16,6 +16,7 @@ public class GameState
     public bool PlayerWon { get; set; }
     public int HitCount { get; set; }
     public string Message { get; set; } = "";
+    public List<AttackHistory> History { get; set; } = new();
 
     public GameState(HttpClient httpClient, BattleshipService.BattleshipServiceClient grpcClient)
     {
@@ -47,6 +48,60 @@ public class GameState
             PlayerWon = false;
             HitCount = 0;
             Message = "Partie démarrée ! Cliquez sur une case pour attaquer.";
+            History = new List<AttackHistory>();
+        }
+    }
+
+    public async Task StartNewGameWithPlacements(List<ShipPlacement> placements)
+    {
+        // Create player board with manual placements
+        PlayerBoard = new Cell[Board.Size, Board.Size];
+        for (int x = 0; x < Board.Size; x++)
+        {
+            for (int y = 0; y < Board.Size; y++)
+            {
+                PlayerBoard[x, y] = new Cell(x, y);
+            }
+        }
+
+        // Place ships manually
+        var playerBoardModel = new Board();
+        foreach (var placement in placements)
+        {
+            playerBoardModel.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal);
+            
+            // Update visual board
+            for (int i = 0; i < placement.Size; i++)
+            {
+                int posX = placement.IsHorizontal ? placement.X + i : placement.X;
+                int posY = placement.IsHorizontal ? placement.Y : placement.Y + i;
+                PlayerBoard[posX, posY].HasShip = true;
+            }
+        }
+
+        // Call API to start game (still generates AI board)
+        var response = await _httpClient.PostAsync("/game/start", null);
+        var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
+        
+        if (result != null)
+        {
+            GameId = result.GameId;
+            // Keep our manually placed board, not the API's
+            OpponentBoard = new Cell[Board.Size, Board.Size];
+            
+            for (int x = 0; x < Board.Size; x++)
+            {
+                for (int y = 0; y < Board.Size; y++)
+                {
+                    OpponentBoard[x, y] = new Cell(x, y);
+                }
+            }
+            
+            GameOver = false;
+            PlayerWon = false;
+            HitCount = 0;
+            Message = "Partie démarrée ! Cliquez sur une case pour attaquer.";
+            History = new List<AttackHistory>();
         }
     }
 
@@ -75,6 +130,13 @@ public class GameState
             PlayerWon = response.PlayerWon;
             HitCount = response.HitCount;
             Message = response.Message;
+            
+            // Ajouter à l'historique
+            History.Add(new AttackHistory(x, y, response.Hit, true));
+            if (response.AiAttack != null)
+            {
+                History.Add(new AttackHistory(response.AiAttack.X, response.AiAttack.Y, response.AiAttack.Hit, false));
+            }
             
             return true;
         }
