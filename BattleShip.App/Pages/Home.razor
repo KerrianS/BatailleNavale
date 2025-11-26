@@ -1,0 +1,113 @@
+﻿@page "/"
+@inject GameState GameState
+
+<div class="container">
+    <h1>Bataille Navale</h1>
+    
+    @if (GameState.GameId == null)
+    {
+        <button class="btn btn-primary btn-lg" @onclick="StartGame">Démarrer Nouvelle Partie</button>
+    }
+    else
+    {
+        <div class="status-bar">
+            <p><strong>@GameState.Message</strong></p>
+            <p>Coups réussis: <span class="badge bg-success">@GameState.HitCount / 13</span></p>
+            @if (GameState.GameOver)
+            {
+                <div class="alert @(GameState.PlayerWon ? "alert-success" : "alert-danger")">
+                    @(GameState.PlayerWon ? "🎉 VICTOIRE !" : "Défaite")
+                </div>
+                <button class="btn btn-primary" @onclick="StartGame">Nouvelle Partie</button>
+            }
+        </div>
+
+        <div class="boards-container">
+            <div class="board-section">
+                <h3>Votre Grille</h3>
+                <div class="board">
+                    @for (int y = 0; y < Board.Size; y++)
+                    {
+                        @for (int x = 0; x < Board.Size; x++)
+                        {
+                            var cell = GameState.PlayerBoard![x, y];
+                            var cellClass = "cell";
+                            if (cell.HasShip && cell.IsHit) cellClass += " ship-hit";
+                            else if (cell.HasShip) cellClass += " ship";
+                            else if (cell.IsHit) cellClass += " miss";
+                            
+                            <div class="@cellClass">
+                                @if (cell.HasShip && cell.IsHit)
+                                {
+                                    <span>X</span>
+                                }
+                                else if (cell.IsHit)
+                                {
+                                    <span>O</span>
+                                }
+                                else if (cell.HasShip)
+                                {
+                                    <span>■</span>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="board-section">
+                <h3>Grille Adverse</h3>
+                <div class="board">
+                    @for (int y = 0; y < Board.Size; y++)
+                    {
+                        @for (int x = 0; x < Board.Size; x++)
+                        {
+                            var cell = GameState.OpponentBoard![x, y];
+                            var cellClass = "cell clickable";
+                            if (cell.HasShip && cell.IsHit) cellClass += " ship-hit";
+                            else if (cell.IsHit) cellClass += " miss";
+                            
+                            var currentX = x;
+                            var currentY = y;
+                            
+                            <div class="@cellClass" @onclick="() => Attack(currentX, currentY)">
+                                @if (cell.HasShip && cell.IsHit)
+                                {
+                                    <span>X</span>
+                                }
+                                else if (cell.IsHit)
+                                {
+                                    <span>O</span>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Auto-start is optional
+    }
+
+    private async Task StartGame()
+    {
+        await GameState.StartNewGame();
+        StateHasChanged();
+    }
+
+    private async Task Attack(int x, int y)
+    {
+        if (GameState.GameOver) return;
+        
+        var cell = GameState.OpponentBoard![x, y];
+        if (cell.IsHit) return; // Already attacked
+        
+        await GameState.Attack(x, y);
+        StateHasChanged();
+    }
+}
