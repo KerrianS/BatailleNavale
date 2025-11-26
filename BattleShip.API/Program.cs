@@ -1,4 +1,6 @@
 using BattleShip.Models;
+using FluentValidation;
+using BattleShip.API.Validators;
 using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +15,9 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+// Register validators
+builder.Services.AddScoped<IValidator<AttackRequest>, AttackRequestValidator>();
 
 var app = builder.Build();
 
@@ -31,13 +36,20 @@ app.MapPost("/game/start", (ILogger<Program> logger) =>
     logger.LogInformation("[NOUVELLE PARTIE] Demarrage d'une nouvelle partie...");
     
     var game = new Game();
+    
+    // Placer les bateaux du joueur
+    GenerateOpponentBoard(game.PlayerBoard);
+    logger.LogInformation("[NOUVELLE PARTIE] Bateaux du joueur places");
+    
+    // Placer les bateaux de l'adversaire
     GenerateOpponentBoard(game.OpponentBoard);
+    logger.LogInformation("[NOUVELLE PARTIE] Bateaux de l'adversaire places");
+    
     games[game.Id] = game;
     
     int shipCount = CountShips(game.OpponentBoard);
     logger.LogInformation("[NOUVELLE PARTIE] Partie creee avec ID: {GameId}", game.Id);
-    logger.LogInformation("[NOUVELLE PARTIE] {ShipCount} bateaux places sur la grille adverse", shipCount);
-    logger.LogInformation("[NOUVELLE PARTIE] Total de cases avec bateaux: 17 (5+4+3+3+2)");
+    logger.LogInformation("[NOUVELLE PARTIE] {ShipCount} cases avec bateaux sur chaque grille", shipCount);
     
     return TypedResults.Ok(new 
     { 
@@ -46,52 +58,117 @@ app.MapPost("/game/start", (ILogger<Program> logger) =>
     });
 });
 
-app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromQuery] int x, [Microsoft.AspNetCore.Mvc.FromQuery] int y, ILogger<Program> logger) =>
+app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromBody] AttackRequest request, IValidator<AttackRequest> validator, ILogger<Program> logger) =>
 {
-    logger.LogInformation("[ATTAQUE] Joueur attaque position ({X}, {Y}) - Game ID: {GameId}", x, y, gameId);
-    
+    logger.LogInformation("[ATTAQUE] Joueur attaque position ({X}, {Y}) - Game ID: {GameId}", request.X, request.Y, gameId);
+
     if (!games.TryGetValue(gameId, out var game))
     {
         logger.LogWarning("[ATTAQUE] Partie non trouvee: {GameId}", gameId);
         return Results.NotFound(new { message = "Partie non trouvée" });
     }
 
-    var (hit, alreadyHit) = game.OpponentBoard.Attack(x, y);
-    
+    // Validate request
+    var validation = validator.Validate(request);
+    if (!validation.IsValid)
+    {
+        var errors = validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }).ToList();
+        logger.LogWarning("[ATTAQUE] Requete invalide: {@Errors}", errors);
+        return Results.BadRequest(new { errors });
+    }
+
+    // Tour du joueur
+    var (hit, alreadyHit) = game.OpponentBoard.Attack(request.X, request.Y);
+
     if (alreadyHit)
     {
-        logger.LogWarning("[ATTAQUE] Case ({X}, {Y}) deja attaquee", x, y);
+        logger.LogWarning("[ATTAQUE] Case ({X}, {Y}) deja attaquee", request.X, request.Y);
         return Results.BadRequest(new { message = "Case déjà attaquée" });
     }
 
-    int hitCount = CountHits(game.OpponentBoard);
-    bool gameOver = hitCount >= 13;
+    int playerHitCount = CountHits(game.OpponentBoard);
+    bool playerWon = playerHitCount >= 13;
     string message = "";
 
     if (hit)
     {
-        message = gameOver ? "Touché-Coulé ! Vous avez gagné !" : "Touché !";
-        logger.LogInformation("[ATTAQUE] TOUCHE ! Position ({X}, {Y}) - Coups reussis: {HitCount}/13", x, y, hitCount);
-        
-        if (gameOver)
-        {
-            logger.LogInformation("[VICTOIRE] Le joueur a gagne avec {HitCount} coups reussis !", hitCount);
-        }
+        message = playerWon ? "Touché-Coulé ! Vous avez gagné !" : "Touché !";
+        logger.LogInformation("[ATTAQUE] TOUCHE ! Position ({X}, {Y}) - Coups reussis joueur: {HitCount}/13", request.X, request.Y, playerHitCount);
     }
     else
     {
         message = "Raté";
-        logger.LogInformation("[ATTAQUE] Rate a la position ({X}, {Y}) - Coups reussis: {HitCount}/13", x, y, hitCount);
+        logger.LogInformation("[ATTAQUE] Rate a la position ({X}, {Y}) - Coups reussis joueur: {HitCount}/13", request.X, request.Y, playerHitCount);
+    }
+
+    // Tour de l'IA (si le jeu n'est pas terminé)
+    bool aiHit = false;
+    int aiX = 0, aiY = 0;
+    bool aiWon = false;
+    bool foundTarget = false;
+
+    if (!playerWon)
+    {
+        // L'IA attaque une case aléatoire non encore attaquée
+        var random = new Random();
+        int attempts = 0;
+
+        while (!foundTarget && attempts < 100)
+        {
+            aiX = random.Next(0, Board.Size);
+            aiY = random.Next(0, Board.Size);
+
+            if (!game.PlayerBoard.Grid[aiX, aiY].IsHit)
+            {
+                foundTarget = true;
+            }
+            attempts++;
+        }
+
+        if (foundTarget)
+        {
+            var (aiHitResult, _) = game.PlayerBoard.Attack(aiX, aiY);
+            aiHit = aiHitResult;
+
+            int aiHitCount = CountHits(game.PlayerBoard);
+            aiWon = aiHitCount >= 13;
+
+            logger.LogInformation("[IA] L'IA attaque position ({X}, {Y}) - {Result}", aiX, aiY, aiHit ? "TOUCHE" : "Rate");
+            logger.LogInformation("[IA] Coups reussis IA: {HitCount}/13", aiHitCount);
+
+            if (aiWon)
+            {
+                logger.LogInformation("[DEFAITE] L'IA a gagne avec {HitCount} coups reussis !", aiHitCount);
+                message = "L'IA a gagné ! Vous avez perdu.";
+            }
+            else if (aiHit)
+            {
+                message += " - L'IA a touché votre bateau !";
+            }
+            else
+            {
+                message += " - L'IA a raté";
+            }
+        }
+    }
+
+    bool gameOver = playerWon || aiWon;
+
+    if (gameOver)
+    {
+        logger.LogInformation("[FIN DE PARTIE] Partie terminee - Gagnant: {Winner}", playerWon ? "Joueur" : "IA");
     }
 
     return Results.Ok(new 
     { 
         hit,
         message,
-        hitCount,
+        hitCount = playerHitCount,
         opponentBoard = ConvertBoardToDto(game.OpponentBoard, false),
+        playerBoard = ConvertBoardToDto(game.PlayerBoard, true),
         gameOver,
-        playerWon = gameOver
+        playerWon,
+        aiAttack = foundTarget ? new { x = aiX, y = aiY, hit = aiHit } : null
     });
 });
 

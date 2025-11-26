@@ -51,7 +51,8 @@ public class GameState
     {
         if (GameId == null || GameOver) return false;
 
-        var response = await _httpClient.PostAsync($"/game/{GameId}/attack?x={x}&y={y}", null);
+    var request = new BattleShip.Models.AttackRequest { X = x, Y = y };
+    var response = await _httpClient.PostAsJsonAsync($"/game/{GameId}/attack", request);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -64,7 +65,15 @@ public class GameState
         
         if (result != null)
         {
+            // Mettre à jour la grille adverse
             OpponentBoard = ConvertToBoard(result.OpponentBoard);
+            
+            // Mettre à jour la grille du joueur (attaque de l'IA)
+            if (result.PlayerBoard != null)
+            {
+                PlayerBoard = ConvertToBoard(result.PlayerBoard);
+            }
+            
             GameOver = result.GameOver;
             PlayerWon = result.PlayerWon;
             HitCount = result.HitCount;
@@ -103,6 +112,7 @@ public class GameState
         public string Message { get; set; } = "";
         public int HitCount { get; set; }
         public BoardDto OpponentBoard { get; set; } = new();
+        public BoardDto? PlayerBoard { get; set; }
         public bool GameOver { get; set; }
         public bool PlayerWon { get; set; }
     }
