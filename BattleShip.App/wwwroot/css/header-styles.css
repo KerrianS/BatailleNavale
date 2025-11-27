@@ -1,0 +1,111 @@
+/* Pirate Header Navigation */
+.pirate-header-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(6, 61, 95, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(66, 165, 245, 0.3);
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'Pirata One', cursive;
+  color: var(--pirate-gold);
+  font-size: 1.8rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.logo-anchor {
+  font-size: 2.2rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.logo-title {
+  letter-spacing: 2px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav-item {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  border: 2px solid transparent;
+  font-size: 1.05rem;
+}
+
+.nav-item:hover {
+  background: rgba(66, 165, 245, 0.15);
+  border-color: rgba(66, 165, 245, 0.4);
+  color: #42a5f5;
+  transform: translateY(-2px);
+}
+
+.nav-item.active {
+  background: rgba(66, 165, 245, 0.25);
+  border-color: #42a5f5;
+  color: #42a5f5;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+  }
+
+  .nav-links {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-logo {
+    font-size: 1.5rem;
+  }
+
+  .logo-anchor {
+    font-size: 1.8rem;
+  }
+
+  .nav-item {
+    font-size: 0.95rem;
+    padding: 0.4rem 1rem;
+  }
+}

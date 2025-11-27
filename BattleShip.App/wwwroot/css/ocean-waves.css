@@ -1,0 +1,87 @@
+/* Ocean Background & Waves */
+
+/* Ocean Background */
+.sea-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('../images/bg.jpeg') no-repeat center center fixed;
+  background-size: cover;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.sea-foreground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.sea-foreground .ocean-waves {
+  height: 45vh;
+}
+
+/* Smooth SVG Ocean Waves */
+.ocean-waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 3;
+}
+
+.wave-layer {
+  animation: move-forever-wave 2s linear infinite;
+}
+
+.wave-layer:nth-child(1) {
+  animation-duration: 5s;
+}
+
+.wave-layer:nth-child(2) {
+  animation-duration: 2.5s;
+  animation-delay: -1.5s;
+}
+
+.wave-layer:nth-child(3) {
+  animation-duration: 3s;
+  animation-delay: -0.5s;
+}
+
+.wave-layer:nth-child(4) {
+  animation-duration: 4s;
+  animation-delay: -2s;
+}
+
+.wave-layer:nth-child(5) {
+  animation-duration: 3.5s;
+  animation-delay: -1s;
+}
+
+@keyframes move-forever-wave {
+  0% {
+    transform: translate(-2px, 0);
+  }
+
+  100% {
+    transform: translate(0px, 0);
+  }
+}
+
+/* Fog Layer */
+.fog-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to top, rgba(6, 61, 95, 0.4) 0%, transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}

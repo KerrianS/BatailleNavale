@@ -1,35 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bataille Navale</title>
-    <meta name="description" content="Jeu de Bataille Navale en ligne. Affrontez l'ordinateur ou vos amis dans ce jeu de stratégie classique." />
-    <base href="/" />
-    <link rel="icon" type="image/svg+xml" href="images/battleship_logo.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="preload" id="webassembly" />
-    <link rel="stylesheet" href="css/app.css" />
-    <script type="importmap"></script>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BattleShip.App</title>
+  <base href="/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="preload" id="webassembly" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/pirate-theme.css" />
+  <link rel="stylesheet" href="css/sidebar-nav.css" />
+  <link rel="stylesheet" href="css/menu-cards.css" />
+  <link rel="stylesheet" href="css/ocean-waves.css" />
+  <script type="importmap"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bataille Navale</title>
+  <meta name="description"
+    content="Jeu de Bataille Navale en ligne. Affrontez l'ordinateur ou vos amis dans ce jeu de stratégie classique." />
+  <base href="/" />
+  <link rel="icon" type="image/svg+xml" href="images/battleship_logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="preload" id="webassembly" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/pirate-theme.css" />
+  <link rel="stylesheet" href="css/sidebar-nav.css" />
+  <link rel="stylesheet" href="css/menu-cards.css" />
+  <link rel="stylesheet" href="css/ocean-waves.css" />
+  <script type="importmap"></script>
 </head>
 
 <body>
-    <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
-    </div>
+  <div id="app">
+    <svg class="loading-progress">
+      <circle r="40%" cx="50%" cy="50%" />
+      <circle r="40%" cx="50%" cy="50%" />
+    </svg>
+    <div class="loading-progress-text"></div>
+  </div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">🗙</span>
-    </div>
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+  <div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+  </div>
+  <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 
 </html>

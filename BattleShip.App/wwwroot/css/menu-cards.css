@@ -1,0 +1,214 @@
+/* Pirate Menu Cards & Buttons */
+
+/* Cards Container */
+.pirate-cards-container {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  perspective: 1500px;
+  max-width: 1200px;
+}
+
+/* Wanted Poster Cards with Float Animation */
+.pirate-card {
+  width: 380px;
+  min-height: 520px;
+  background-color: var(--pirate-parchment);
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(0, 0, 0, 0.05) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.05) 0%, transparent 20%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.02) 0px, rgba(0, 0, 0, 0.02) 2px, transparent 2px, transparent 4px);
+  border-radius: 4px;
+  position: relative;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(62, 39, 35, 0.1),
+    inset 0 0 80px rgba(62, 39, 35, 0.2);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+  cursor: pointer;
+  overflow: visible;
+  animation: cardFloat 6s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(0deg);
+  }
+
+  75% {
+    transform: translateY(-8px) rotate(-0.5deg);
+  }
+}
+
+.pirate-card:nth-child(2) {
+  animation-delay: -3s;
+}
+
+/* Torn Edge Effect (Top) */
+.pirate-card::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background-color: var(--pirate-parchment);
+  clip-path: polygon(0% 100%, 2% 0%, 5% 100%, 7% 0%, 10% 100%, 12% 0%, 15% 100%, 17% 0%,
+      20% 100%, 22% 0%, 25% 100%, 27% 0%, 30% 100%, 32% 0%, 35% 100%, 37% 0%,
+      40% 100%, 42% 0%, 45% 100%, 47% 0%, 50% 100%, 52% 0%, 55% 100%, 57% 0%,
+      60% 100%, 62% 0%, 65% 100%, 67% 0%, 70% 100%, 72% 0%, 75% 100%, 77% 0%,
+      80% 100%, 82% 0%, 85% 100%, 87% 0%, 90% 100%, 92% 0%, 95% 100%, 97% 0%, 100% 100%);
+}
+
+/* Wax Seal Effect */
+.pirate-card::after {
+  content: '⚓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.2);
+  font-size: 24px;
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  background: var(--pirate-red);
+  border-radius: 50%;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.2),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  border: 3px solid #6d1212;
+}
+
+.pirate-card:hover {
+  transform: translateY(-25px) scale(1.02);
+  box-shadow:
+    0 35px 80px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(197, 160, 89, 0.2);
+}
+
+/* Card Content Styles */
+.card-skull-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+  opacity: 0.8;
+}
+
+.card-title {
+  font-family: 'Pirata One', cursive;
+  font-size: 2.5rem;
+  color: var(--pirate-wood);
+  margin: 0.5rem 0;
+  text-align: center;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.4);
+}
+
+.card-description {
+  font-size: 1.1rem;
+  color: var(--pirate-wood-light);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+.card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+  width: 100%;
+}
+
+.card-features li {
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed rgba(62, 39, 35, 0.2);
+  text-align: center;
+  color: var(--pirate-wood);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.card-features li:last-child {
+  border-bottom: none;
+}
+
+/* Pirate Button */
+.pirate-btn {
+  margin-top: auto;
+  padding: 1rem 2.5rem;
+  background: linear-gradient(to bottom, var(--pirate-wood-light), var(--pirate-wood));
+  color: var(--pirate-gold);
+  border: 2px solid var(--pirate-gold);
+  font-family: 'Pirata One', cursive;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.pirate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border-color: #fff;
+  background: linear-gradient(to bottom, #6d4c41, #4e342e);
+}
+
+.pirate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.pirate-btn:hover::before {
+  left: 100%;
+}
+
+@media (max-width: 1024px) {
+  .pirate-card {
+    width: 340px;
+    min-height: 480px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pirate-cards-container {
+    gap: 2rem;
+  }
+
+  .pirate-card {
+    width: 100%;
+    max-width: 380px;
+  }
+}
