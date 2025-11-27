@@ -199,13 +199,15 @@
                     
                     if (cell.IsHorizontal)
                     {
-                        // Source image is vertical. For horizontal placement, rotate -90deg and shift down.
-                        style = $"width: 100%; height: {size * 100}%; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; transform-origin: top left; transform: rotate(-90deg) translateX(-100%);";
+                        // Horizontal: rotation de 90° vers la droite, décalé d'une cellule vers le bas
+                        int totalHeight = size * 35 + (size - 1) * 2;
+                        style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 35px; left: 0; z-index: 1; pointer-events: none; object-fit: fill; transform: rotate(-90deg); transform-origin: top left;";
                     }
                     else
                     {
-                        // Source image is vertical. For vertical placement, no rotation needed.
-                        style = $"width: 100%; height: {size * 100}%; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;";
+                        // Vertical: l'image s'étend sur 'size' cellules verticalement
+                        int totalHeight = size * 35 + (size - 1) * 2;
+                        style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; object-fit: fill;";
                     }
                     
                     builder.OpenElement(0, "img");

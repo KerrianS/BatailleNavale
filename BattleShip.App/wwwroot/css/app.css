@@ -235,6 +235,7 @@ button, .btn {
     transition: all 0.2s;
     flex-shrink: 0;
     position: relative;
+    overflow: hidden;
 }
 
 .cell.clickable {
@@ -632,6 +633,7 @@ button, .btn {
     cursor: pointer;
     transition: all 0.2s;
     flex-shrink: 0;
+    position: relative;
 }
 
 .grid-cell.has-ship {
