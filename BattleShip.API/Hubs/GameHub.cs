@@ -106,7 +106,7 @@ public class GameHub : Hub
         if (hit)
         {
             var ship = targetBoard.GetShipAt(x, y);
-            if (ship != null && ship.IsSunk())
+            if (ship != null && ship.IsSunk(targetBoard.Grid))
             {
                 sunk = true;
             }

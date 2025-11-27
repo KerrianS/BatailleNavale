@@ -264,6 +264,23 @@ button, .btn {
     color: white;
 }
 
+.cell.sunk {
+    background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%);
+    border-color: #9d4edd;
+    color: white;
+    box-shadow: 0 0 15px rgba(157, 78, 221, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.4);
+    animation: sunkPulse 2s ease-in-out infinite;
+}
+
+@keyframes sunkPulse {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(157, 78, 221, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(157, 78, 221, 0.9), inset 0 0 15px rgba(0, 0, 0, 0.6);
+    }
+}
+
 .cell.miss {
     background: #95a5a6;
     border-color: #7f8c8d;

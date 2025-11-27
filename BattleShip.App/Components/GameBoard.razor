@@ -1,25 +1,27 @@
 @using BattleShip.Models
 
-<div class="board-with-coordinates">
-    <div class="board-header">
-        <div class="corner-cell"></div>
-        @for (int col = 0; col < GridSize; col++)
-        {
-            <div class="coord-label">@((char)('A' + col))</div>
-        }
-    </div>
-    <div class="board-content">
-        <div class="board-rows-container">
-            @for (int y = 0; y < GridSize; y++)
+@if (BoardData != null)
+{
+    <div class="board-with-coordinates">
+        <div class="board-header">
+            <div class="corner-cell"></div>
+            @for (int col = 0; col < GridSize; col++)
             {
-                <div class="board-row-with-label">
-                    <div class="coord-label">@y</div>
-                    <div class="@RowClassName">
-                        @for (int x = 0; x < GridSize; x++)
-                        {
-                            var cell = BoardData![x, y];
-                            var currentX = x;
-                            var currentY = y;
+                <div class="coord-label">@((char)('A' + col))</div>
+            }
+        </div>
+        <div class="board-content">
+            <div class="board-rows-container">
+                @for (int y = 0; y < GridSize; y++)
+                {
+                    <div class="board-row-with-label">
+                        <div class="coord-label">@y</div>
+                        <div class="@RowClassName">
+                            @for (int x = 0; x < GridSize; x++)
+                            {
+                                var cell = BoardData[x, y];
+                                var currentX = x;
+                                var currentY = y;
                             
                             <div class="@GetCellClass(cell)" 
                                  @onclick="() => HandleCellClick(currentX, currentY)"
@@ -43,6 +45,7 @@
         </div>
     </div>
 </div>
+}
 
 @code {
     [Parameter]
@@ -96,7 +99,14 @@
             
             if (cell.IsHit)
             {
-                classes.Add(cell.HasShip ? "hit" : "miss");
+                if (cell.IsSunk)
+                {
+                    classes.Add("sunk");
+                }
+                else
+                {
+                    classes.Add(cell.HasShip ? "hit" : "miss");
+                }
             }
         }
         else
@@ -108,7 +118,14 @@
             
             if (cell.IsHit)
             {
-                classes.Add(cell.HasShip ? "hit" : "miss");
+                if (cell.IsSunk)
+                {
+                    classes.Add("sunk");
+                }
+                else
+                {
+                    classes.Add(cell.HasShip ? "hit" : "miss");
+                }
             }
         }
         

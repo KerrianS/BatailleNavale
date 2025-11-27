@@ -87,12 +87,26 @@ public class GameState
         }
 
         var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
+        
+        // Créer la partie
         var response = await httpClient.PostAsync($"/game/start?gridSize={gridSize}", null);
         var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
         
         if (result != null)
         {
             GameId = result.GameId;
+            
+            // Envoyer les placements du joueur à l'API
+            var placementResponse = await httpClient.PostAsJsonAsync($"/game/{GameId}/place-ships", placements);
+            if (!placementResponse.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Erreur lors de l'envoi des placements: {placementResponse.StatusCode}");
+            }
+            else
+            {
+                Console.WriteLine($"Placements envoyés avec succès pour GameId: {GameId}");
+            }
+            
             OpponentBoard = new Cell[gridSize, gridSize];
             
             for (int x = 0; x < gridSize; x++)
@@ -126,25 +140,9 @@ public class GameState
             
             var response = await _grpcClient.AttackAsync(request);
             
-            if (response.Hit)
-            {
-                OpponentBoard![x, y].IsHit = true;
-                OpponentBoard[x, y].HasShip = true; 
-            }
-            else
-            {
-                OpponentBoard![x, y].IsHit = true;
-            }
-            
-            if (response.AiAttack != null)
-            {
-                int aiX = response.AiAttack.X;
-                int aiY = response.AiAttack.Y;
-                if (aiX < PlayerBoard!.GetLength(0) && aiY < PlayerBoard.GetLength(1))
-                {
-                    PlayerBoard[aiX, aiY].IsHit = true;
-                }
-            }
+            // Mettre à jour les boards avec les données complètes du serveur (incluant IsSunk)
+            UpdateBoardFromGrpc(OpponentBoard!, response.OpponentBoard, OpponentBoard!.GetLength(0));
+            UpdateBoardFromGrpc(PlayerBoard!, response.PlayerBoard, PlayerBoard!.GetLength(0));
             
             GameOver = response.GameOver;
             PlayerWon = response.PlayerWon;
@@ -179,6 +177,8 @@ public class GameState
             if (cell.X < gridSize && cell.Y < gridSize)
             {
                 board[cell.X, cell.Y].IsHit = cell.IsHit;
+                board[cell.X, cell.Y].HasShip = cell.HasShip;
+                board[cell.X, cell.Y].IsSunk = cell.IsSunk;
             }
         }
     }
