@@ -4,18 +4,24 @@ public class Board
 {
     public Cell[,] Grid { get; set; }
     public const int Size = 10;
+    public int CurrentSize { get; private set; }
 
-    public Board()
+    public Board() : this(Size)
     {
-        Grid = new Cell[Size, Size];
+    }
+
+    public Board(int size)
+    {
+        CurrentSize = size;
+        Grid = new Cell[size, size];
         InitializeGrid();
     }
 
     private void InitializeGrid()
     {
-        for (int x = 0; x < Size; x++)
+        for (int x = 0; x < CurrentSize; x++)
         {
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; y < CurrentSize; y++)
             {
                 Grid[x, y] = new Cell(x, y);
             }
@@ -29,7 +35,7 @@ public class Board
             int posX = isHorizontal ? x + i : x;
             int posY = isHorizontal ? y : y + i;
             
-            if (posX < Size && posY < Size)
+            if (posX < CurrentSize && posY < CurrentSize)
             {
                 Grid[posX, posY].HasShip = true;
             }
@@ -38,8 +44,8 @@ public class Board
 
     public bool CanPlaceShip(int x, int y, int size, bool isHorizontal)
     {
-        if (isHorizontal && x + size > Size) return false;
-        if (!isHorizontal && y + size > Size) return false;
+        if (isHorizontal && x + size > CurrentSize) return false;
+        if (!isHorizontal && y + size > CurrentSize) return false;
 
         for (int i = 0; i < size; i++)
         {
@@ -54,7 +60,7 @@ public class Board
 
     public (bool hit, bool alreadyHit) Attack(int x, int y)
     {
-        if (x < 0 || x >= Size || y < 0 || y >= Size)
+        if (x < 0 || x >= CurrentSize || y < 0 || y >= CurrentSize)
             return (false, false);
 
         var cell = Grid[x, y];
@@ -68,7 +74,7 @@ public class Board
 
     public bool ReceiveAttack(int x, int y)
     {
-        if (x < 0 || x >= Size || y < 0 || y >= Size)
+        if (x < 0 || x >= CurrentSize || y < 0 || y >= CurrentSize)
             return false;
 
         var cell = Grid[x, y];
@@ -84,9 +90,9 @@ public class Board
 
     public bool AllShipsSunk()
     {
-        for (int x = 0; x < Size; x++)
+        for (int x = 0; x < CurrentSize; x++)
         {
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; y < CurrentSize; y++)
             {
                 if (Grid[x, y].HasShip && !Grid[x, y].IsHit)
                     return false;

@@ -1,0 +1,33 @@
+@page "/game"
+@using BattleShip.Models
+@using BattleShip.App.Components
+@inject GameState GameState
+@inject NavigationManager Navigation
+
+<div class="ocean-background"></div>
+
+<div class="game-container">
+    <AIGameBoard 
+        OnRestart="RestartGame"
+        OnBackToMenu="GoBack" />
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (GameState.GameId == null)
+        {
+            Navigation.NavigateTo("/ship");
+        }
+    }
+
+    private void RestartGame()
+    {
+        Navigation.NavigateTo("/ship");
+    }
+    
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

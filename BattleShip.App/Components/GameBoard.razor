@@ -1,78 +1,174 @@
 @using BattleShip.Models
 
-<div class="board-section">
-    <h3>@Title</h3>
-    <div class="board">
-        @for (int y = 0; y < Board.Size; y++)
+<div class="board-with-coordinates">
+    <div class="board-header">
+        <div class="corner-cell"></div>
+        @for (int col = 0; col < GridSize; col++)
         {
-            @for (int x = 0; x < Board.Size; x++)
+            <div class="coord-label">@((char)('A' + col))</div>
+        }
+    </div>
+    <div class="board-content">
+        <div class="board-rows-container">
+            @for (int y = 0; y < GridSize; y++)
             {
-                var cell = BoardData![x, y];
-                var cellClass = "cell";
-                
-                if (IsOpponentBoard)
-                {
-                    // Grille adverse: X = touché, O = raté, case vide = cliquable
-                    cellClass += " clickable";
-                    if (cell.IsHit && cell.HasShip) 
-                        cellClass += " ship-hit";
-                    else if (cell.IsHit) 
-                        cellClass += " miss";
-                }
-                else
-                {
-                    // Grille joueur: afficher bateaux + impacts
-                    if (cell.HasShip && cell.IsHit) cellClass += " ship-hit";
-                    else if (cell.HasShip) cellClass += " ship";
-                    else if (cell.IsHit) cellClass += " miss";
-                }
-                
-                var currentX = x;
-                var currentY = y;
-                
-                <div class="@cellClass" @onclick="() => OnCellClick.InvokeAsync((currentX, currentY))">
-                    @if (IsOpponentBoard)
-                    {
-                        @if (cell.IsHit && cell.HasShip)
+                <div class="board-row-with-label">
+                    <div class="coord-label">@y</div>
+                    <div class="@RowClassName">
+                        @for (int x = 0; x < GridSize; x++)
                         {
-                            <span class="hit-icon">X</span>
+                            var cell = BoardData![x, y];
+                            var currentX = x;
+                            var currentY = y;
+                            
+                            <div class="@GetCellClass(cell)" 
+                                 @onclick="() => HandleCellClick(currentX, currentY)"
+                                 @onmouseover="() => HandleCellHover(currentX, currentY)"
+                                 @onmouseout="HandleCellLeave">
+                                @if (RenderCellContent != null)
+                                {
+                                    @RenderCellContent(cell)
+                                }
+                                else
+                                {
+                                    @DefaultCellContent(cell)
+                                }
+                            </div>
                         }
-                        else if (cell.IsHit)
-                        {
-                            <span class="miss-icon">O</span>
-                        }
-                    }
-                    else
-                    {
-                        @if (cell.HasShip && cell.IsHit)
-                        {
-                            <span>X</span>
-                        }
-                        else if (cell.IsHit)
-                        {
-                            <span>O</span>
-                        }
-                        else if (cell.HasShip)
-                        {
-                            <span>■</span>
-                        }
-                    }
+                    </div>
                 </div>
             }
-        }
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter]
-    public string Title { get; set; } = "";
-    
-    [Parameter]
     public Cell[,]? BoardData { get; set; }
+
+    [Parameter]
+    public int GridSize { get; set; } = 10;
     
     [Parameter]
     public bool IsOpponentBoard { get; set; }
     
     [Parameter]
+    public bool IsClickable { get; set; } = false;
+    
+    [Parameter]
     public EventCallback<(int x, int y)> OnCellClick { get; set; }
+
+    [Parameter]
+    public EventCallback<(int x, int y)> OnCellHover { get; set; }
+
+    [Parameter]
+    public EventCallback OnCellLeave { get; set; }
+    
+    [Parameter]
+    public Func<Cell, string>? GetCustomCellClass { get; set; }
+    
+    [Parameter]
+    public RenderFragment<Cell>? RenderCellContent { get; set; }
+    
+    [Parameter]
+    public string RowClassName { get; set; } = "board-row";
+
+    private string GetCellClass(Cell cell)
+    {
+        if (GetCustomCellClass != null)
+        {
+            return GetCustomCellClass(cell);
+        }
+
+        var classes = new List<string> { "cell" };
+        
+        if (IsOpponentBoard)
+        {
+            if (IsClickable && !cell.IsHit)
+            {
+                classes.Add("clickable");
+            }
+            
+            if (cell.IsHit)
+            {
+                classes.Add(cell.HasShip ? "hit" : "miss");
+            }
+        }
+        else
+        {
+            if (cell.HasShip)
+            {
+                classes.Add("ship");
+            }
+            
+            if (cell.IsHit)
+            {
+                classes.Add(cell.HasShip ? "hit" : "miss");
+            }
+        }
+        
+        return string.Join(" ", classes);
+    }
+
+    private void HandleCellClick(int x, int y)
+    {
+        if (IsClickable || !IsOpponentBoard)
+        {
+            OnCellClick.InvokeAsync((x, y));
+        }
+    }
+
+    private void HandleCellHover(int x, int y)
+    {
+        OnCellHover.InvokeAsync((x, y));
+    }
+
+    private void HandleCellLeave()
+    {
+        OnCellLeave.InvokeAsync();
+    }
+
+    private RenderFragment DefaultCellContent(Cell cell) => builder =>
+    {
+        if (IsOpponentBoard)
+        {
+            if (cell.IsHit && cell.HasShip)
+            {
+                builder.OpenElement(0, "img");
+                builder.AddAttribute(1, "src", "images/hit.png");
+                builder.AddAttribute(2, "alt", "Touché");
+                builder.AddAttribute(3, "class", "hit-icon");
+                builder.CloseElement();
+            }
+            else if (cell.IsHit)
+            {
+                builder.OpenElement(0, "img");
+                builder.AddAttribute(1, "src", "images/miss.png");
+                builder.AddAttribute(2, "alt", "Raté");
+                builder.AddAttribute(3, "class", "miss-icon");
+                builder.CloseElement();
+            }
+        }
+        else
+        {
+            if (cell.HasShip && cell.IsHit)
+            {
+                builder.OpenElement(0, "span");
+                builder.AddContent(1, "X");
+                builder.CloseElement();
+            }
+            else if (cell.IsHit)
+            {
+                builder.OpenElement(0, "span");
+                builder.AddContent(1, "O");
+                builder.CloseElement();
+            }
+            else if (cell.HasShip)
+            {
+                builder.OpenElement(0, "span");
+                builder.AddContent(1, "■");
+                builder.CloseElement();
+            }
+        }
+    };
 }

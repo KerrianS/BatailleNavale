@@ -46,16 +46,21 @@ app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapGrpcService<BattleshipGRPCService>().EnableGrpcWeb().RequireCors("AllowBlazor");
 app.MapHub<GameHub>("/gamehub").RequireCors("AllowBlazor");
 
-app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
+app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string, Game> games, int? gridSize) =>
 {
-    logger.LogInformation("[NOUVELLE PARTIE] Demarrage d'une nouvelle partie...");
+    int size = gridSize ?? 10;
+    logger.LogInformation("[NOUVELLE PARTIE] Demarrage d'une nouvelle partie avec grille {Size}x{Size}...", size, size);
     
-    var game = new Game();
+    var game = new Game
+    {
+        PlayerBoard = new Board(size),
+        OpponentBoard = new Board(size)
+    };
     
-    GenerateOpponentBoard(game.PlayerBoard);
+    GenerateOpponentBoard(game.PlayerBoard, size);
     logger.LogInformation("[NOUVELLE PARTIE] Bateaux du joueur places");
     
-    GenerateOpponentBoard(game.OpponentBoard);
+    GenerateOpponentBoard(game.OpponentBoard, size);
     logger.LogInformation("[NOUVELLE PARTIE] Bateaux de l'adversaire places");
     
     games[game.Id] = game;
@@ -124,8 +129,8 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
 
         while (!foundTarget && attempts < 100)
         {
-            aiX = random.Next(0, Board.Size);
-            aiY = random.Next(0, Board.Size);
+            aiX = random.Next(0, game.PlayerBoard.CurrentSize);
+            aiY = random.Next(0, game.PlayerBoard.CurrentSize);
 
             if (!game.PlayerBoard.Grid[aiX, aiY].IsHit)
             {
@@ -183,7 +188,7 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
 
 app.Run();
 
-void GenerateOpponentBoard(Board board)
+void GenerateOpponentBoard(Board board, int gridSize)
 {
     var random = new Random();
     var ships = new[] { 5, 4, 3, 3, 2 };
@@ -195,8 +200,8 @@ void GenerateOpponentBoard(Board board)
         while (!placed)
         {
             attempts++;
-            int x = random.Next(0, Board.Size);
-            int y = random.Next(0, Board.Size);
+            int x = random.Next(0, gridSize);
+            int y = random.Next(0, gridSize);
             bool isHorizontal = random.Next(2) == 0;
             
             if (board.CanPlaceShip(x, y, shipSize, isHorizontal))
@@ -212,9 +217,9 @@ void GenerateOpponentBoard(Board board)
 int CountShips(Board board)
 {
     int count = 0;
-    for (int x = 0; x < Board.Size; x++)
+    for (int x = 0; x < board.CurrentSize; x++)
     {
-        for (int y = 0; y < Board.Size; y++)
+        for (int y = 0; y < board.CurrentSize; y++)
         {
             if (board.Grid[x, y].HasShip)
                 count++;
@@ -226,9 +231,9 @@ int CountShips(Board board)
 object ConvertBoardToDto(Board board, bool showShips)
 {
     var cells = new List<object>();
-    for (int x = 0; x < Board.Size; x++)
+    for (int x = 0; x < board.CurrentSize; x++)
     {
-        for (int y = 0; y < Board.Size; y++)
+        for (int y = 0; y < board.CurrentSize; y++)
         {
             var cell = board.Grid[x, y];
             cells.Add(new
@@ -243,25 +248,12 @@ object ConvertBoardToDto(Board board, bool showShips)
     return new { cells };
 }
 
-bool IsGameOver(Board board)
-{
-    for (int x = 0; x < Board.Size; x++)
-    {
-        for (int y = 0; y < Board.Size; y++)
-        {
-            if (board.Grid[x, y].HasShip && !board.Grid[x, y].IsHit)
-                return false;
-        }
-    }
-    return true;
-}
-
 int CountHits(Board board)
 {
     int count = 0;
-    for (int x = 0; x < Board.Size; x++)
+    for (int x = 0; x < board.CurrentSize; x++)
     {
-        for (int y = 0; y < Board.Size; y++)
+        for (int y = 0; y < board.CurrentSize; y++)
         {
             if (board.Grid[x, y].HasShip && board.Grid[x, y].IsHit)
                 count++;

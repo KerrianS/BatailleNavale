@@ -20,16 +20,18 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
     {
         _logger.LogInformation("[gRPC ATTAQUE] Position ({X}, {Y}) - Game ID: {GameId}", request.X, request.Y, request.GameId);
 
-        if (request.X < 0 || request.X >= Board.Size || request.Y < 0 || request.Y >= Board.Size)
-        {
-            _logger.LogWarning("[gRPC ATTAQUE] Coordonnees invalides: ({X}, {Y})", request.X, request.Y);
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "Coordonnées invalides. X et Y doivent être entre 0 et 9."));
-        }
-
         if (!_games.TryGetValue(request.GameId, out var game))
         {
             _logger.LogWarning("[gRPC ATTAQUE] Partie non trouvee: {GameId}", request.GameId);
             throw new RpcException(new Status(StatusCode.NotFound, "Partie non trouvée"));
+        }
+
+        int boardSize = game.OpponentBoard.CurrentSize;
+
+        if (request.X < 0 || request.X >= boardSize || request.Y < 0 || request.Y >= boardSize)
+        {
+            _logger.LogWarning("[gRPC ATTAQUE] Coordonnees invalides: ({X}, {Y}) - Taille grille: {Size}", request.X, request.Y, boardSize);
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Coordonnées invalides. X et Y doivent être entre 0 et {boardSize - 1}."));
         }
 
         var (hit, alreadyHit) = game.OpponentBoard.Attack(request.X, request.Y);
@@ -70,8 +72,8 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
 
             while (!foundTarget && attempts < 100)
             {
-                aiX = random.Next(0, Board.Size);
-                aiY = random.Next(0, Board.Size);
+                aiX = random.Next(0, game.PlayerBoard.CurrentSize);
+                aiY = random.Next(0, game.PlayerBoard.CurrentSize);
 
                 if (!game.PlayerBoard.Grid[aiX, aiY].IsHit)
                 {
@@ -144,9 +146,9 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
     private int CountHits(Board board)
     {
         int count = 0;
-        for (int x = 0; x < Board.Size; x++)
+        for (int x = 0; x < board.CurrentSize; x++)
         {
-            for (int y = 0; y < Board.Size; y++)
+            for (int y = 0; y < board.CurrentSize; y++)
             {
                 if (board.Grid[x, y].HasShip && board.Grid[x, y].IsHit)
                     count++;
@@ -158,9 +160,9 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
     private BoardDto ConvertBoardToDto(Board board, bool showShips)
     {
         var boardDto = new BoardDto();
-        for (int x = 0; x < Board.Size; x++)
+        for (int x = 0; x < board.CurrentSize; x++)
         {
-            for (int y = 0; y < Board.Size; y++)
+            for (int y = 0; y < board.CurrentSize; y++)
             {
                 var cell = board.Grid[x, y];
                 boardDto.Cells.Add(new CellDto

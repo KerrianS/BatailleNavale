@@ -1,0 +1,50 @@
+@using BattleShip.Models
+
+<div class="history-section mt-4">
+    <h3>@Title</h3>
+    <div class="history-list">
+        @foreach (var move in GetRecentHistory())
+        {
+            <div class="history-item @(move.IsPlayer ? "player-move" : GetOpponentMoveClass())">
+                <span class="move-player">@GetPlayerName(move)</span>
+                <span class="move-coords">(@move.X, @move.Y)</span>
+                <span class="move-result @(move.Hit ? "hit" : "miss")">
+                    @(move.Hit ? "Touché !" : "Raté")
+                </span>
+                <span class="move-time">@move.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<AttackHistory> History { get; set; } = new();
+    
+    [Parameter]
+    public string Title { get; set; } = "Historique des coups";
+    
+    [Parameter]
+    public int MaxItems { get; set; } = 10;
+    
+    [Parameter]
+    public string PlayerName { get; set; } = "Vous";
+    
+    [Parameter]
+    public string OpponentName { get; set; } = "IA";
+
+    private IEnumerable<AttackHistory> GetRecentHistory()
+    {
+        return History.AsEnumerable().Reverse().Take(MaxItems);
+    }
+
+    private string GetPlayerName(AttackHistory move)
+    {
+        return move.IsPlayer ? PlayerName : OpponentName;
+    }
+
+    private string GetOpponentMoveClass()
+    {
+        return OpponentName == "IA" ? "ai-move" : "opponent-move";
+    }
+}

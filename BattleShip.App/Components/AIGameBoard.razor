@@ -1,0 +1,88 @@
+@using BattleShip.Models
+@inject GameState GameState
+
+
+    <GamePopup 
+        IsVisible="GameState.GameOver"
+        IsVictory="GameState.PlayerWon"
+        OnRestart="OnRestart"
+        OnBackToMenu="OnBackToMenu" />
+
+
+<div class="boards-container">
+    <div class="board-section">
+        <h3 class="board-title player-title">Votre Grille</h3>
+        <div class="board-wrapper">
+            <GameBoard 
+                BoardData="GameState.PlayerBoard"
+                GridSize="@(GameState.PlayerBoard?.GetLength(0) ?? 10)"
+                IsOpponentBoard="false" />
+        </div>
+    </div>
+
+    <div class="board-section">
+        <h3 class="board-title opponent-title">Grille Adverse</h3>
+        <div class="board-wrapper">
+            <GameBoard 
+                BoardData="GameState.OpponentBoard"
+                GridSize="@(GameState.OpponentBoard?.GetLength(0) ?? 10)"
+                IsOpponentBoard="true"
+                IsClickable="!GameState.GameOver"
+                OnCellClick="HandleCellClick" />
+        </div>
+    </div>
+</div>
+
+@if (GameState.History.Count > 0)
+{
+    <div class="history-section">
+        <AttackHistoryList 
+            History="GameState.History"
+            Title="Historique des coups"
+            MaxItems="50"
+            PlayerName="Vous"
+            OpponentName="IA" />
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback OnRestart { get; set; }
+
+    [Parameter]
+    public EventCallback OnBackToMenu { get; set; }
+
+    protected override void OnInitialized()
+    {
+        GameState.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        GameState.OnStateChanged -= StateHasChanged;
+    }
+
+    private async Task HandleCellClick((int x, int y) coords)
+    {
+        if (GameState.GameOver) return;
+        
+        var cell = GameState.OpponentBoard![coords.x, coords.y];
+        if (cell.IsHit) return;
+        
+        var success = await GameState.Attack(coords.x, coords.y);
+        
+        if (success && GameState.GameOver)
+        {
+            if (GameState.PlayerWon)
+            {
+                GameState.Message = "Vous avez gagné !";
+            }
+            else
+            {
+                GameState.Message = "Vous avez perdu";
+            }
+        }
+        
+        StateHasChanged();
+    }
+}

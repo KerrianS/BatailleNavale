@@ -6,8 +6,10 @@ namespace BattleShip.App.Services;
 
 public class GameState
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly BattleshipService.BattleshipServiceClient _grpcClient;
+    
+    public event Action? OnStateChanged;
     
     public string? GameId { get; set; }
     public Cell[,]? PlayerBoard { get; set; }
@@ -18,16 +20,19 @@ public class GameState
     public string Message { get; set; } = "";
     public List<AttackHistory> History { get; set; } = new();
 
-    public GameState(HttpClient httpClient, BattleshipService.BattleshipServiceClient grpcClient)
+    private void NotifyStateChanged() => OnStateChanged?.Invoke();
+
+    public GameState(IHttpClientFactory httpClientFactory, BattleshipService.BattleshipServiceClient grpcClient)
     {
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
         _grpcClient = grpcClient;
     }
 
     public async Task StartNewGame()
     {
         // Use REST endpoint for starting game (as specified in PDF)
-        var response = await _httpClient.PostAsync("/game/start", null);
+        var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
+        var response = await httpClient.PostAsync("/game/start", null);
         var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
         
         if (result != null)
@@ -52,46 +57,47 @@ public class GameState
         }
     }
 
-    public async Task StartNewGameWithPlacements(List<ShipPlacement> placements)
+    public async Task StartNewGameWithPlacements(List<ShipPlacement> placements, int gridSize = 10)
     {
-        // Create player board with manual placements
-        PlayerBoard = new Cell[Board.Size, Board.Size];
-        for (int x = 0; x < Board.Size; x++)
+        PlayerBoard = new Cell[gridSize, gridSize];
+        for (int x = 0; x < gridSize; x++)
         {
-            for (int y = 0; y < Board.Size; y++)
+            for (int y = 0; y < gridSize; y++)
             {
                 PlayerBoard[x, y] = new Cell(x, y);
             }
         }
 
-        // Place ships manually
-        var playerBoardModel = new Board();
+        var playerBoardModel = new Board(gridSize);
         foreach (var placement in placements)
         {
             playerBoardModel.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal);
             
-            // Update visual board
             for (int i = 0; i < placement.Size; i++)
             {
                 int posX = placement.IsHorizontal ? placement.X + i : placement.X;
                 int posY = placement.IsHorizontal ? placement.Y : placement.Y + i;
-                PlayerBoard[posX, posY].HasShip = true;
+                
+                if (posX < gridSize && posY < gridSize)
+                {
+                    PlayerBoard[posX, posY].HasShip = true;
+                    Console.WriteLine($"Placing ship at [{posX}, {posY}]");
+                }
             }
         }
 
-        // Call API to start game (still generates AI board)
-        var response = await _httpClient.PostAsync("/game/start", null);
+        var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
+        var response = await httpClient.PostAsync($"/game/start?gridSize={gridSize}", null);
         var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
         
         if (result != null)
         {
             GameId = result.GameId;
-            // Keep our manually placed board, not the API's
-            OpponentBoard = new Cell[Board.Size, Board.Size];
+            OpponentBoard = new Cell[gridSize, gridSize];
             
-            for (int x = 0; x < Board.Size; x++)
+            for (int x = 0; x < gridSize; x++)
             {
-                for (int y = 0; y < Board.Size; y++)
+                for (int y = 0; y < gridSize; y++)
                 {
                     OpponentBoard[x, y] = new Cell(x, y);
                 }
@@ -120,24 +126,38 @@ public class GameState
             
             var response = await _grpcClient.AttackAsync(request);
             
-            // Update opponent board
-            OpponentBoard = ConvertGrpcBoardToArray(response.OpponentBoard);
+            if (response.Hit)
+            {
+                OpponentBoard![x, y].IsHit = true;
+                OpponentBoard[x, y].HasShip = true; 
+            }
+            else
+            {
+                OpponentBoard![x, y].IsHit = true;
+            }
             
-            // Update player board (AI attack)
-            PlayerBoard = ConvertGrpcBoardToArray(response.PlayerBoard);
+            if (response.AiAttack != null)
+            {
+                int aiX = response.AiAttack.X;
+                int aiY = response.AiAttack.Y;
+                if (aiX < PlayerBoard!.GetLength(0) && aiY < PlayerBoard.GetLength(1))
+                {
+                    PlayerBoard[aiX, aiY].IsHit = true;
+                }
+            }
             
             GameOver = response.GameOver;
             PlayerWon = response.PlayerWon;
             HitCount = response.HitCount;
             Message = response.Message;
             
-            // Ajouter à l'historique
             History.Add(new AttackHistory(x, y, response.Hit, true));
             if (response.AiAttack != null)
             {
                 History.Add(new AttackHistory(response.AiAttack.X, response.AiAttack.Y, response.AiAttack.Hit, false));
             }
             
+            NotifyStateChanged();
             return true;
         }
         catch (Grpc.Core.RpcException ex)
@@ -149,6 +169,17 @@ public class GameState
         {
             Message = "Erreur: " + ex.Message;
             return false;
+        }
+    }
+
+    private void UpdateBoardFromGrpc(Cell[,] board, API.Protos.BoardDto boardDto, int gridSize)
+    {
+        foreach (var cell in boardDto.Cells)
+        {
+            if (cell.X < gridSize && cell.Y < gridSize)
+            {
+                board[cell.X, cell.Y].IsHit = cell.IsHit;
+            }
         }
     }
 

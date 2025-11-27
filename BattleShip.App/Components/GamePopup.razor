@@ -1,0 +1,30 @@
+@if (IsVisible)
+{
+    <div class="game-over-overlay">
+        <div class="game-over-panel @(IsVictory ? "victory" : "defeat")">
+            <div class="game-over-text">@(IsVictory ? "VICTOIRE !" : "DÉFAITE")</div>
+            <div class="game-over-actions">
+                <button class="game-btn game-btn-primary" @onclick="OnRestart">
+                    Nouvelle Partie
+                </button>
+                <button class="game-btn game-btn-secondary" @onclick="OnBackToMenu">
+                    Menu
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public bool IsVictory { get; set; }
+
+    [Parameter]
+    public EventCallback OnRestart { get; set; }
+
+    [Parameter]
+    public EventCallback OnBackToMenu { get; set; }
+}

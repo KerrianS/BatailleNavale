@@ -10,16 +10,22 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// Register HttpClientFactory with named client
+builder.Services.AddHttpClient("BattleShipAPI", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5001");
+});
+
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5001") });
 
-builder.Services.AddScoped(sp =>
+builder.Services.AddSingleton(sp =>
 {
     var httpClient = new HttpClient(new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()));
     var channel = GrpcChannel.ForAddress("http://localhost:5001", new GrpcChannelOptions { HttpClient = httpClient });
     return new BattleshipService.BattleshipServiceClient(channel);
 });
 
-builder.Services.AddScoped<GameState>();
+builder.Services.AddSingleton<GameState>();
 builder.Services.AddScoped<MultiplayerGameService>();
 
 await builder.Build().RunAsync();

@@ -67,58 +67,33 @@
             <div class="boards-container">
                 <div class="board-section">
                     <h3>Votre grille</h3>
-                    <div class="game-board">
-                        @for (int y = 0; y < Board.Size; y++)
-                        {
-                            <div class="board-row">
-                                @for (int x = 0; x < Board.Size; x++)
-                                {
-                                    var cell = MultiplayerService.MyBoard?.Grid[x, y];
-                                    <div class="board-cell @GetMyCellClass(cell)">
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
+                    <GameBoard 
+                        BoardData="MultiplayerService.MyBoard?.Grid"
+                        IsOpponentBoard="false"
+                        RowClassName="game-board-row"
+                        GetCustomCellClass="GetMyCellClass" />
                 </div>
 
                 <div class="board-section">
                     <h3>Grille adverse</h3>
-                    <div class="game-board">
-                        @for (int y = 0; y < Board.Size; y++)
-                        {
-                            <div class="board-row">
-                                @for (int x = 0; x < Board.Size; x++)
-                                {
-                                    var xCopy = x;
-                                    var yCopy = y;
-                                    var cell = MultiplayerService.OpponentBoard?.Grid[x, y];
-                                    <div class="board-cell @GetOpponentCellClass(cell) @(IsMyTurn && !cell?.IsHit == true ? "clickable" : "")"
-                                         @onclick="() => Attack(xCopy, yCopy)">
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
+                    <GameBoard 
+                        BoardData="MultiplayerService.OpponentBoard?.Grid"
+                        IsOpponentBoard="true"
+                        IsClickable="IsMyTurn"
+                        RowClassName="game-board-row"
+                        OnCellClick="HandleAttackClick"
+                        GetCustomCellClass="GetOpponentCellClass" />
                 </div>
             </div>
 
             @if (MultiplayerService.History.Count > 0)
             {
-                <div class="history-section">
-                    <h3>Historique (10 derniers coups)</h3>
-                    <div class="history-list">
-                        @foreach (var attack in MultiplayerService.History.TakeLast(10).Reverse())
-                        {
-                            <div class="history-item @(attack.IsPlayer ? "player-move" : "opponent-move")">
-                                <span class="player-name">@(attack.IsPlayer ? "Vous" : OpponentName)</span>
-                                <span class="coordinates">(@attack.X, @attack.Y)</span>
-                                <span class="result">@(attack.Hit ? "Touché ✓" : "Raté ✗")</span>
-                                <span class="timestamp">@attack.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
-                            </div>
-                        }
-                    </div>
-                </div>
+                <AttackHistoryList 
+                    History="MultiplayerService.History"
+                    Title="Historique (10 derniers coups)"
+                    MaxItems="10"
+                    PlayerName="Vous"
+                    OpponentName="@OpponentName" />
             }
         </div>
     }
@@ -243,6 +218,11 @@
             StateHasChanged();
         }
     }
+    
+    private async Task HandleAttackClick((int x, int y) coords)
+    {
+        await Attack(coords.x, coords.y);
+    }
 
     private void HandleAttackResult(int x, int y, bool hit, bool sunk, bool gameOver)
     {
@@ -250,7 +230,6 @@
         
         if (gameOver)
         {
-            // Will be handled by OnGameWon
             return;
         }
 
@@ -353,9 +332,9 @@
 
     private string GetMyCellClass(Cell? cell)
     {
-        if (cell == null) return "";
+        if (cell == null) return "board-cell";
         
-        var classes = new List<string>();
+        var classes = new List<string> { "board-cell" };
         
         if (cell.HasShip)
         {
@@ -372,9 +351,9 @@
 
     private string GetOpponentCellClass(Cell? cell)
     {
-        if (cell == null) return "";
+        if (cell == null) return "board-cell";
         
-        var classes = new List<string>();
+        var classes = new List<string> { "board-cell" };
         
         if (cell.IsHit)
         {
