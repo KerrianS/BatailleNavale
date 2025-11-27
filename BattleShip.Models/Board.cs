@@ -5,6 +5,7 @@ public class Board
     public Cell[,] Grid { get; set; }
     public const int Size = 10;
     public int CurrentSize { get; private set; }
+    public List<Ship> Ships { get; set; } = new();
 
     public Board() : this(Size)
     {
@@ -30,6 +31,12 @@ public class Board
 
     public void PlaceShip(int x, int y, int size, bool isHorizontal, ShipType? shipType = null)
     {
+        var ship = new Ship
+        {
+            Size = size,
+            Type = (ShipType)size // Approximation basée sur la taille
+        };
+
         for (int i = 0; i < size; i++)
         {
             int posX = isHorizontal ? x + i : x;
@@ -44,8 +51,11 @@ public class Board
                 {
                     Grid[posX, posY].IsShipStart = true;
                 }
+                ship.Positions.Add((posX, posY));
             }
         }
+
+        Ships.Add(ship);
     }
 
     public bool CanPlaceShip(int x, int y, int size, bool isHorizontal)

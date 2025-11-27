@@ -32,6 +32,7 @@ message CellDto {
     int32 y = 2;
     bool hasShip = 3;
     bool isHit = 4;
+    bool isSunk = 5;
 }
 
 // Attaque de l'IA

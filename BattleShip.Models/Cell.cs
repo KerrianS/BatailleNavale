@@ -6,6 +6,7 @@ public class Cell
     public int Y { get; set; }
     public bool HasShip { get; set; }
     public bool IsHit { get; set; }
+    public bool IsSunk { get; set; }
     
     public Cell(int x, int y)
     {
@@ -13,6 +14,7 @@ public class Cell
         Y = y;
         HasShip = false;
         IsHit = false;
+        IsSunk = false;
     }
 
     public ShipType? ShipType { get; set; }

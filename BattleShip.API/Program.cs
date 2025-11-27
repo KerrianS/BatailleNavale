@@ -57,8 +57,8 @@ app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string
         OpponentBoard = new Board(size)
     };
     
-    GenerateOpponentBoard(game.PlayerBoard, size);
-    logger.LogInformation("[NOUVELLE PARTIE] Bateaux du joueur places");
+    // Ne pas générer les bateaux du joueur - ils seront placés via /game/{gameId}/place-ships
+    logger.LogInformation("[NOUVELLE PARTIE] Plateau du joueur vide - en attente des placements");
     
     GenerateOpponentBoard(game.OpponentBoard, size);
     logger.LogInformation("[NOUVELLE PARTIE] Bateaux de l'adversaire places");
@@ -74,6 +74,35 @@ app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string
         gameId = game.Id,
         playerBoard = ConvertBoardToDto(game.PlayerBoard, true)
     });
+}).RequireCors("AllowBlazor");
+
+app.MapPost("/game/{gameId}/place-ships", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromBody] List<ShipPlacement> placements, ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
+{
+    logger.LogInformation("[PLACEMENT] Reception de {Count} placements pour Game ID: {GameId}", placements.Count, gameId);
+
+    if (!games.TryGetValue(gameId, out var game))
+    {
+        logger.LogWarning("[PLACEMENT] Partie non trouvee: {GameId}", gameId);
+        return Results.NotFound(new { message = "Partie non trouvée" });
+    }
+
+    // Réinitialiser complètement le PlayerBoard pour éviter les bateaux aléatoires
+    int boardSize = game.PlayerBoard.CurrentSize;
+    game.PlayerBoard = new Board(boardSize);
+    logger.LogInformation("[PLACEMENT] Plateau du joueur reinitialise");
+
+    // Placer les bateaux du joueur
+    foreach (var placement in placements)
+    {
+        game.PlayerBoard.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal);
+        logger.LogInformation("[PLACEMENT] Bateau de taille {Size} place a ({X},{Y}) - {Orientation}", 
+            placement.Size, placement.X, placement.Y, placement.IsHorizontal ? "Horizontal" : "Vertical");
+    }
+
+    int shipCount = CountShips(game.PlayerBoard);
+    logger.LogInformation("[PLACEMENT] Total: {ShipCount} cases avec bateaux sur le plateau du joueur", shipCount);
+
+    return Results.Ok(new { success = true, shipCount });
 }).RequireCors("AllowBlazor");
 
 app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] string gameId, [Microsoft.AspNetCore.Mvc.FromBody] AttackRequest request, IValidator<AttackRequest> validator, ILogger<Program> logger, ConcurrentDictionary<string, Game> games) =>
@@ -102,19 +131,41 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         return Results.BadRequest(new { message = "Case déjà attaquée" });
     }
 
+    // Vérifier les bateaux coulés par le joueur
+    List<Ship> previousPlayerSunkShips = game.OpponentBoard.Ships
+        .Where(ship => ship.IsSunk(game.OpponentBoard.Grid))
+        .ToList();
+    int previousPlayerSunkCount = previousPlayerSunkShips.Count;
+
+    List<Ship> playerSunkShips = game.OpponentBoard.Ships
+        .Where(ship => ship.IsSunk(game.OpponentBoard.Grid))
+        .ToList();
+
     int playerHitCount = CountHits(game.OpponentBoard);
-    bool playerWon = playerHitCount >= 13;
+    int playerSunkShipsCount = playerSunkShips.Count;
+    bool playerWon = playerSunkShipsCount >= 5;
     string message = "";
 
     if (hit)
     {
-        message = playerWon ? "Touché-Coulé ! Vous avez gagné !" : "Touché !";
-        logger.LogInformation("[ATTAQUE] TOUCHE ! Position ({X}, {Y}) - Coups reussis joueur: {HitCount}/13", request.X, request.Y, playerHitCount);
+        if (playerWon)
+        {
+            message = "Touché-Coulé ! Vous avez gagné !";
+        }
+        else if (playerSunkShips.Count > previousPlayerSunkCount)
+        {
+            message = $"Coulé ! Vous avez coulé {playerSunkShips.Count}/5 bateaux.";
+        }
+        else
+        {
+            message = "Touché !";
+        }
+        logger.LogInformation("[ATTAQUE] TOUCHE ! Position ({X}, {Y}) - Bateaux coules joueur: {SunkCount}/5", request.X, request.Y, playerSunkShipsCount);
     }
     else
     {
         message = "Raté";
-        logger.LogInformation("[ATTAQUE] Rate a la position ({X}, {Y}) - Coups reussis joueur: {HitCount}/13", request.X, request.Y, playerHitCount);
+        logger.LogInformation("[ATTAQUE] Rate a la position ({X}, {Y}) - Bateaux coules joueur: {SunkCount}/5", request.X, request.Y, playerSunkShipsCount);
     }
 
     bool aiHit = false;
@@ -144,20 +195,38 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
             var (aiHitResult, _) = game.PlayerBoard.Attack(aiX, aiY);
             aiHit = aiHitResult;
 
+            // Vérifier les bateaux coulés par l'IA
+            List<Ship> previousAISunkShips = game.PlayerBoard.Ships
+                .Where(ship => ship.IsSunk(game.PlayerBoard.Grid))
+                .ToList();
+            int previousAISunkCount = previousAISunkShips.Count;
+
+            List<Ship> aiSunkShips = game.PlayerBoard.Ships
+                .Where(ship => ship.IsSunk(game.PlayerBoard.Grid))
+                .ToList();
+
             int aiHitCount = CountHits(game.PlayerBoard);
-            aiWon = aiHitCount >= 13;
+            int aiSunkShipsCount = aiSunkShips.Count;
+            aiWon = aiSunkShipsCount >= 5;
 
             logger.LogInformation("[IA] L'IA attaque position ({X}, {Y}) - {Result}", aiX, aiY, aiHit ? "TOUCHE" : "Rate");
-            logger.LogInformation("[IA] Coups reussis IA: {HitCount}/13", aiHitCount);
+            logger.LogInformation("[IA] Bateaux coules IA: {SunkCount}/5", aiSunkShipsCount);
 
             if (aiWon)
             {
-                logger.LogInformation("[DEFAITE] L'IA a gagne avec {HitCount} coups reussis !", aiHitCount);
+                logger.LogInformation("[DEFAITE] L'IA a gagne avec {SunkCount} bateaux coules !", aiSunkShipsCount);
                 message = "L'IA a gagné ! Vous avez perdu.";
             }
             else if (aiHit)
             {
-                message += " - L'IA a touché votre bateau !";
+                if (aiSunkShips.Count > previousAISunkCount)
+                {
+                    message += $" - L'IA a coulé votre bateau ! ({aiSunkShipsCount}/5)";
+                }
+                else
+                {
+                    message += " - L'IA a touché votre bateau !";
+                }
             }
             else
             {
