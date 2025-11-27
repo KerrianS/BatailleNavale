@@ -62,7 +62,7 @@ public class GameHub : Hub
         // Place ships on board
         foreach (var placement in placements)
         {
-            board.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal);
+            board.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal, placement.ShipType);
         }
         
         // Mark player as ready

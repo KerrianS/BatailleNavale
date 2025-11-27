@@ -28,7 +28,7 @@ public class Board
         }
     }
 
-    public void PlaceShip(int x, int y, int size, bool isHorizontal)
+    public void PlaceShip(int x, int y, int size, bool isHorizontal, ShipType? shipType = null)
     {
         for (int i = 0; i < size; i++)
         {
@@ -38,6 +38,12 @@ public class Board
             if (posX < CurrentSize && posY < CurrentSize)
             {
                 Grid[posX, posY].HasShip = true;
+                Grid[posX, posY].ShipType = shipType;
+                Grid[posX, posY].IsHorizontal = isHorizontal;
+                if (i == 0)
+                {
+                    Grid[posX, posY].IsShipStart = true;
+                }
             }
         }
     }

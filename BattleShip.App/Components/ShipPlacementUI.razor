@@ -98,11 +98,11 @@
     {
         RemainingShips = new List<ShipInfo>
         {
-            new ShipInfo { Name = "Porte-avions", Size = 5, Type = ShipType.Carrier },
-            new ShipInfo { Name = "Croiseur", Size = 4, Type = ShipType.Battleship },
-            new ShipInfo { Name = "Contre-torpilleur", Size = 3, Type = ShipType.Cruiser },
-            new ShipInfo { Name = "Sous-marin", Size = 3, Type = ShipType.Submarine },
-            new ShipInfo { Name = "Torpilleur", Size = 2, Type = ShipType.Destroyer }
+            new ShipInfo { Name = "Porte-avions", Size = ShipType.Carrier.GetSize(), Type = ShipType.Carrier },
+            new ShipInfo { Name = "Croiseur", Size = ShipType.Battleship.GetSize(), Type = ShipType.Battleship },
+            new ShipInfo { Name = "Contre-torpilleur", Size = ShipType.Cruiser.GetSize(), Type = ShipType.Cruiser },
+            new ShipInfo { Name = "Sous-marin", Size = ShipType.Submarine.GetSize(), Type = ShipType.Submarine },
+            new ShipInfo { Name = "Torpilleur", Size = ShipType.Destroyer.GetSize(), Type = ShipType.Destroyer }
         };
         
         if (RemainingShips.Count > 0)
@@ -169,7 +169,7 @@
             return;
         }
 
-        PlacementBoard.PlaceShip(x, y, currentShip.Size, IsHorizontal);
+        PlacementBoard.PlaceShip(x, y, currentShip.Size, IsHorizontal, currentShip.Type);
         
         Placements.Add(new ShipPlacement
         {

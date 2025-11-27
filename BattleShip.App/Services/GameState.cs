@@ -71,7 +71,7 @@ public class GameState
         var playerBoardModel = new Board(gridSize);
         foreach (var placement in placements)
         {
-            playerBoardModel.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal);
+            playerBoardModel.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal, placement.ShipType);
             
             for (int i = 0; i < placement.Size; i++)
             {
@@ -81,6 +81,9 @@ public class GameState
                 if (posX < gridSize && posY < gridSize)
                 {
                     PlayerBoard[posX, posY].HasShip = true;
+                    PlayerBoard[posX, posY].ShipType = placement.ShipType;
+                    PlayerBoard[posX, posY].IsHorizontal = placement.IsHorizontal;
+                    if (i == 0) PlayerBoard[posX, posY].IsShipStart = true;
                     Console.WriteLine($"Placing ship at [{posX}, {posY}]");
                 }
             }

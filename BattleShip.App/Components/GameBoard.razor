@@ -22,6 +22,7 @@
                             var currentY = y;
                             
                             <div class="@GetCellClass(cell)" 
+                                 style="@GetCellStyle(cell)"
                                  @onclick="() => HandleCellClick(currentX, currentY)"
                                  @onmouseover="() => HandleCellHover(currentX, currentY)"
                                  @onmouseout="HandleCellLeave">
@@ -110,6 +111,15 @@
         return string.Join(" ", classes);
     }
 
+    private string GetCellStyle(Cell cell)
+    {
+        if (cell.IsShipStart && cell.HasShip && !IsOpponentBoard)
+        {
+            return "z-index: 10;";
+        }
+        return "";
+    }
+
     private void HandleCellClick(int x, int y)
     {
         if (IsClickable || !IsOpponentBoard)
@@ -151,22 +161,52 @@
         }
         else
         {
-            if (cell.HasShip && cell.IsHit)
+            if (cell.HasShip)
             {
-                builder.OpenElement(0, "span");
-                builder.AddContent(1, "X");
-                builder.CloseElement();
+                if (cell.IsShipStart && cell.ShipType.HasValue)
+                {
+                    string imageName = cell.ShipType.Value.ToString() + ".png";
+                    
+                    int size = cell.ShipType.Value.GetSize();
+                    string style;
+                    
+                    if (cell.IsHorizontal)
+                    {
+                        // Source image is vertical. For horizontal placement, rotate -90deg and shift down.
+                        style = $"width: 100%; height: {size * 100}%; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; transform-origin: top left; transform: rotate(-90deg) translateX(-100%);";
+                    }
+                    else
+                    {
+                        // Source image is vertical. For vertical placement, no rotation needed.
+                        style = $"width: 100%; height: {size * 100}%; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;";
+                    }
+                    
+                    builder.OpenElement(0, "img");
+                    builder.AddAttribute(1, "src", $"images/ships/leChat/{imageName}");
+                    builder.AddAttribute(2, "alt", cell.ShipType.Value.ToString());
+                    builder.AddAttribute(3, "style", style);
+                    builder.CloseElement();
+                }
+                else if (!cell.ShipType.HasValue)
+                {
+                    // Fallback for when ShipType is not set
+                    builder.OpenElement(0, "span");
+                    builder.AddContent(1, "■");
+                    builder.CloseElement();
+                }
+
+                if (cell.IsHit)
+                {
+                    builder.OpenElement(4, "div");
+                    builder.AddAttribute(5, "style", "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex; align-items: center; justify-content: center; background-color: rgba(255, 0, 0, 0.5); color: white; font-weight: bold;");
+                    builder.AddContent(6, "X");
+                    builder.CloseElement();
+                }
             }
             else if (cell.IsHit)
             {
                 builder.OpenElement(0, "span");
                 builder.AddContent(1, "O");
-                builder.CloseElement();
-            }
-            else if (cell.HasShip)
-            {
-                builder.OpenElement(0, "span");
-                builder.AddContent(1, "■");
                 builder.CloseElement();
             }
         }

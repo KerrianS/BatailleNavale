@@ -14,4 +14,8 @@ public class Cell
         HasShip = false;
         IsHit = false;
     }
+
+    public ShipType? ShipType { get; set; }
+    public bool IsShipStart { get; set; }
+    public bool IsHorizontal { get; set; }
 }

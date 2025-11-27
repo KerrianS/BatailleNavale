@@ -234,6 +234,7 @@ button, .btn {
     font-weight: bold;
     transition: all 0.2s;
     flex-shrink: 0;
+    position: relative;
 }
 
 .cell.clickable {
@@ -246,11 +247,7 @@ button, .btn {
     box-shadow: 0 0 5px rgba(0, 119, 182, 0.5);
 }
 
-.cell.ship {
-    background: #4a90e2;
-    border-color: #2c5aa0;
-    color: white;
-}
+
 
 .cell.hit {
     background: #e74c3c;
