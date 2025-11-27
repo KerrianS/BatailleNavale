@@ -12,9 +12,12 @@
         <div class="ship-selection">
             @foreach (var ship in RemainingShips)
             {
-                <button class="ship-button @(SelectedShipType == ship.Type ? "selected" : "")" 
-                        @onclick="() => SelectShip(ship)">
-                    @ship.Name (@ship.Size cases)
+                var isSelected = SelectedShipType.HasValue && SelectedShipType.Value == ship.Type;
+                var currentShip = ship;
+                <button class="ship-button @(isSelected ? "selected" : "")" 
+                        @onclick="() => SelectShip(currentShip)"
+                        @onclick:stopPropagation="true">
+                    @ship.Name
                 </button>
             }
         </div>
@@ -45,6 +48,7 @@
             IsOpponentBoard="false"
             IsClickable="true"
             OnCellClick="HandlePlacementClick"
+            OnCellRightClick="HandleRightClick"
             OnCellHover="HandleCellHoverEvent"
             OnCellLeave="ClearHover"
             GetCustomCellClass="GetPlacementCellClass"
@@ -115,12 +119,21 @@
     {
         SelectedShipType = ship.Type;
         ErrorMessage = "";
+        StateHasChanged();
     }
 
     private void ToggleOrientation()
     {
         IsHorizontal = !IsHorizontal;
         ErrorMessage = "";
+        StateHasChanged();
+    }
+
+    private void HandleRightClick((int x, int y) position)
+    {
+        // Change l'orientation avec le clic droit
+        IsHorizontal = !IsHorizontal;
+        StateHasChanged();
     }
 
     private async Task ChangeSize(int size)
@@ -140,6 +153,7 @@
     {
         HoverX = x;
         HoverY = y;
+        StateHasChanged();
     }
 
     private void HandleCellHoverEvent((int x, int y) coords)
@@ -151,6 +165,7 @@
     {
         HoverX = -1;
         HoverY = -1;
+        StateHasChanged();
     }
 
     private void PlaceShip(int x, int y)
@@ -206,7 +221,7 @@
 
     private string GetPlacementCellClass(Cell cell)
     {
-        var classes = new List<string> { "cell" };
+        var classes = new List<string> { "grid-cell" };
         
         if (cell.HasShip)
         {
@@ -230,41 +245,23 @@
         var selectedShip = RemainingShips.FirstOrDefault(s => s.Type == SelectedShipType.Value);
         if (selectedShip == null) return "";
         
-        if (HoverX == x && HoverY == y)
-        {
-            // Check if placement is valid
-            bool canPlace = PlacementBoard.CanPlaceShip(x, y, selectedShip.Size, IsHorizontal);
-            
-            if (IsHorizontal)
-            {
-                if (x >= HoverX && x < HoverX + selectedShip.Size && y == HoverY)
-                {
-                    return canPlace ? "hover-valid" : "hover-invalid";
-                }
-            }
-            else
-            {
-                if (y >= HoverY && y < HoverY + selectedShip.Size && x == HoverX)
-                {
-                    return canPlace ? "hover-valid" : "hover-invalid";
-                }
-            }
-        }
+        // Check if placement is valid at hover position
+        bool canPlace = PlacementBoard.CanPlaceShip(HoverX, HoverY, selectedShip.Size, IsHorizontal);
         
-        // Show hover preview on adjacent cells
+        // Show hover preview for all cells the ship would occupy
         if (IsHorizontal)
         {
-            if (y == HoverY && x > HoverX && x < HoverX + selectedShip.Size)
+            // Horizontal: check if current cell is in the range [HoverX, HoverX + Size)
+            if (y == HoverY && x >= HoverX && x < HoverX + selectedShip.Size)
             {
-                bool canPlace = PlacementBoard.CanPlaceShip(HoverX, HoverY, selectedShip.Size, IsHorizontal);
                 return canPlace ? "hover-valid" : "hover-invalid";
             }
         }
         else
         {
-            if (x == HoverX && y > HoverY && y < HoverY + selectedShip.Size)
+            // Vertical: check if current cell is in the range [HoverY, HoverY + Size)
+            if (x == HoverX && y >= HoverY && y < HoverY + selectedShip.Size)
             {
-                bool canPlace = PlacementBoard.CanPlaceShip(HoverX, HoverY, selectedShip.Size, IsHorizontal);
                 return canPlace ? "hover-valid" : "hover-invalid";
             }
         }

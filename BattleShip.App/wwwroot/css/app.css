@@ -168,13 +168,13 @@ button, .btn {
 }
 
 .corner-cell {
-    width: 35px;
+    width: 37px;
     height: 35px;
     flex-shrink: 0;
 }
 
 .coord-label {
-    width: 35px;
+    width: 37px;
     height: 35px;
     display: flex;
     align-items: center;
@@ -201,7 +201,7 @@ button, .btn {
 }
 
 .board-row-with-label .coord-label {
-    width: 35px;
+    width: 37px;
     height: 35px;
     margin-right: 0;
 }
@@ -247,6 +247,12 @@ button, .btn {
 }
 
 .cell.ship {
+    background: #4a90e2;
+    border-color: #2c5aa0;
+    color: white;
+}
+
+.grid-cell.ship {
     background: #4a90e2;
     border-color: #2c5aa0;
     color: white;
@@ -490,23 +496,29 @@ button, .btn {
 .ship-button {
     width: 100%;
     padding: 12px 15px;
-    background: #e0e0e0;
-    border: 2px solid transparent;
+    background: #f5f5f5;
+    border: 2px solid #d0d0d0;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     font-weight: 500;
+    color: #333;
 }
 
 .ship-button.selected {
-    background: #4a90e2;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
     color: white;
     border-color: #2c5aa0;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    transform: scale(1.02);
+    font-weight: 600;
 }
 
-.ship-button:hover {
+.ship-button:not(.selected):hover {
+    background: #e8e8e8;
+    border-color: #a0a0a0;
     transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .placement-controls {
@@ -562,7 +574,7 @@ button, .btn {
 }
 
 .placement-grid-section .coord-label {
-    width: 35px;
+    width: 37px;
     height: 35px;
     display: flex;
     align-items: center;
@@ -585,7 +597,7 @@ button, .btn {
 }
 
 .placement-row-with-label .coord-label {
-    width: 35px;
+    width: 37px;
     height: 35px;
     margin-right: 0;
     display: flex;

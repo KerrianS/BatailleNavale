@@ -11,9 +11,9 @@ public class ShipPlacement
 
 public enum ShipType
 {
-    Carrier = 5,        // Porte-avions
-    Battleship = 4,     // Croiseur
-    Cruiser = 3,        // Contre-torpilleur
-    Submarine = 3,      // Sous-marin
-    Destroyer = 2       // Torpilleur
+    Carrier = 1,        // Porte-avions (5 cases)
+    Battleship = 2,     // Croiseur (4 cases)
+    Cruiser = 3,        // Contre-torpilleur (3 cases)
+    Submarine = 4,      // Sous-marin (3 cases)
+    Destroyer = 5       // Torpilleur (2 cases)
 }

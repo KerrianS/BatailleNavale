@@ -23,6 +23,8 @@
                             
                             <div class="@GetCellClass(cell)" 
                                  @onclick="() => HandleCellClick(currentX, currentY)"
+                                 @oncontextmenu="() => HandleCellRightClick(currentX, currentY)"
+                                 @oncontextmenu:preventDefault="true"
                                  @onmouseover="() => HandleCellHover(currentX, currentY)"
                                  @onmouseout="HandleCellLeave">
                                 @if (RenderCellContent != null)
@@ -63,6 +65,9 @@
 
     [Parameter]
     public EventCallback OnCellLeave { get; set; }
+
+    [Parameter]
+    public EventCallback<(int x, int y)> OnCellRightClick { get; set; }
     
     [Parameter]
     public Func<Cell, string>? GetCustomCellClass { get; set; }
@@ -126,6 +131,11 @@
     private void HandleCellLeave()
     {
         OnCellLeave.InvokeAsync();
+    }
+
+    private void HandleCellRightClick(int x, int y)
+    {
+        OnCellRightClick.InvokeAsync((x, y));
     }
 
     private RenderFragment DefaultCellContent(Cell cell) => builder =>
