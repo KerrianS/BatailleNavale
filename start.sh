@@ -22,7 +22,7 @@ trap cleanup SIGINT SIGTERM
 
 echo -e "${GREEN}[1/2] Demarrage de l'API (port 5001)...${NC}"
 cd BattleShip.API
-"/c/Program Files/dotnet/dotnet.exe" run --launch-profile http > ../api.log 2>&1 &
+dotnet run --launch-profile http > ../api.log 2>&1 &
 API_PID=$!
 cd ..
 
@@ -31,7 +31,7 @@ sleep 5
 
 echo -e "${GREEN}[2/2] Demarrage de l'application Blazor (port 5208)...${NC}"
 cd BattleShip.App
-"/c/Program Files/dotnet/dotnet.exe" run > ../app.log 2>&1 &
+dotnet run > ../app.log 2>&1 &
 APP_PID=$!
 cd ..
 
