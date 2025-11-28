@@ -246,7 +246,10 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
                     Y = cell.Y,
                     HasShip = showShips ? cell.HasShip : (isSunkPosition || (cell.IsHit && cell.HasShip)),
                     IsHit = cell.IsHit,
-                    IsSunk = isSunkPosition
+                    IsSunk = isSunkPosition,
+                    ShipType = cell.ShipType.HasValue ? (int)cell.ShipType.Value : -1,
+                    IsShipStart = cell.IsShipStart,
+                    IsHorizontal = cell.IsHorizontal
                 });
             }
         }

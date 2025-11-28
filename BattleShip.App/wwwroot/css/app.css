@@ -88,6 +88,9 @@ body {
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: url('../images/bg.jpeg') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -235,7 +238,7 @@ button, .btn {
     transition: all 0.2s;
     flex-shrink: 0;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .cell.clickable {
@@ -268,6 +271,10 @@ button, .btn {
     color: white;
     box-shadow: 0 0 15px rgba(157, 78, 221, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.4);
     animation: sunkPulse 2s ease-in-out infinite;
+}
+
+.cell.sunk .hit-icon {
+    display: none;
 }
 
 @keyframes sunkPulse {
@@ -819,6 +826,7 @@ button, .btn {
     padding: 15px;
     background: #f8f9fa;
     border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .player-info p {
@@ -1089,22 +1097,6 @@ button, .btn {
     }
 }
 
-/* Ocean Menu Background */
-.ocean-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(to bottom, #005aa7 0%, #1e7cb8 30%, #2e8bc0 60%, #4ca8d8 100%);
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    padding: 0;
-}
-
 /* Menu Container */
 .menu-container {
     position: relative;
@@ -1358,44 +1350,45 @@ button, .btn {
 }
 
 .game-btn {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
     font-weight: 600;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+    transition: all 0.2s ease;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-width: 140px;
 }
 
 .game-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .game-btn:active {
-    transform: translateY(-1px);
+    transform: translateY(0);
 }
 
 .game-btn-primary {
-    background: linear-gradient(135deg, #e63946, #d62828);
+    background: #dc3545;
     color: white;
 }
 
 .game-btn-primary:hover {
-    background: linear-gradient(135deg, #d62828, #c1121f);
+    background: #c82333;
 }
 
 .game-btn-secondary {
-    background: linear-gradient(135deg, #6c757d, #495057);
+    background: #6c757d;
     color: white;
 }
 
 .game-btn-secondary:hover {
-    background: linear-gradient(135deg, #495057, #343a40);
+    background: #5a6268;
 }
 
 .game-header {
@@ -1442,7 +1435,8 @@ button, .btn {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1451,30 +1445,37 @@ button, .btn {
 }
 
 .game-over-panel {
-    padding: 2rem;
-    border-radius: 15px;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 20px;
     text-align: center;
     min-width: 400px;
-    animation: slideDown 0.5s ease;
+    max-width: 90vw;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.4s ease;
 }
 
 .game-over-panel.victory {
-    background: linear-gradient(135deg, #06d6a0, #048a81);
-    color: white;
-    box-shadow: 0 0 30px rgba(6, 214, 160, 0.5);
+    border-top: 5px solid #28a745;
 }
 
 .game-over-panel.defeat {
-    background: linear-gradient(135deg, #e63946, #d62828);
-    color: white;
-    box-shadow: 0 0 30px rgba(230, 57, 70, 0.5);
+    border-top: 5px solid #dc3545;
 }
 
 .game-over-text {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 1.5rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-top: 0;
+}
+
+.game-over-panel.victory .game-over-text {
+    color: #28a745;
+}
+
+.game-over-panel.defeat .game-over-text {
+    color: #dc3545;
 }
 
 .game-over-actions {

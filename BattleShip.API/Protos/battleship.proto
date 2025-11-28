@@ -33,6 +33,9 @@ message CellDto {
     bool hasShip = 3;
     bool isHit = 4;
     bool isSunk = 5;
+    int32 shipType = 6;
+    bool isShipStart = 7;
+    bool isHorizontal = 8;
 }
 
 // Attaque de l'IA

@@ -4,7 +4,7 @@
 @inject GameState GameState
 @inject NavigationManager Navigation
 
-<div class="ocean-background"></div>
+
 
 <div class="game-container">
     <div class="game-card placement-card">
@@ -58,6 +58,11 @@
 @code {
     private int GridSize = 10;
 
+    protected override void OnInitialized()
+    {
+        GameState.SetNavigationManager(Navigation);
+    }
+
     private void ChangeGridSize(int size)
     {
         GridSize = size;
@@ -67,6 +72,6 @@
     private async Task OnShipsPlaced(List<BattleShip.Models.ShipPlacement> placements)
     {
         await GameState.StartNewGameWithPlacements(placements, GridSize);
-        Navigation.NavigateTo("/game");
+        // La navigation se fait automatiquement dans StartNewGameWithPlacements
     }
 }

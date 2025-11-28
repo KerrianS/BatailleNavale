@@ -1,24 +1,52 @@
 @page "/game"
+@page "/game/{GameId}"
 @using BattleShip.Models
 @using BattleShip.App.Components
 @inject GameState GameState
 @inject NavigationManager Navigation
 
-<div class="ocean-background"></div>
-
-<div class="game-container">
-    <AIGameBoard 
-        OnRestart="RestartGame"
-        OnBackToMenu="GoBack" />
-</div>
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner"></div>
+        <p>Chargement de la partie...</p>
+    </div>
+}
+else
+{
+    <div class="game-container">
+        <AIGameBoard 
+            OnRestart="RestartGame"
+            OnBackToMenu="GoBack" />
+    </div>
+}
 
 @code {
-    protected override void OnInitialized()
+    [Parameter] public string? GameId { get; set; }
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
     {
+        // Essayer de restaurer une partie existante
+        if (!string.IsNullOrEmpty(GameId))
+        {
+            bool restored = await GameState.TryRestoreGame(GameId);
+            if (restored)
+            {
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+        }
+
+        // Si pas de partie à restaurer ou échec, rediriger vers le placement
         if (GameState.GameId == null)
         {
             Navigation.NavigateTo("/ship");
+            return;
         }
+
+        isLoading = false;
     }
 
     private void RestartGame()

@@ -11,6 +11,21 @@ public class MultiplayerGame : Game
     public bool Player2Ready { get; set; }
     public GameMode Mode { get; set; } = GameMode.VsAI;
     public Board Player2Board { get; set; } = new Board();
+    
+    public bool GameOver 
+    { 
+        get => PlayerBoard.AllShipsSunk() || Player2Board.AllShipsSunk(); 
+    }
+    
+    public string? Winner 
+    { 
+        get 
+        {
+            if (PlayerBoard.AllShipsSunk()) return Player2Name;
+            if (Player2Board.AllShipsSunk()) return Player1Name;
+            return null;
+        } 
+    }
 }
 
 public enum GameMode

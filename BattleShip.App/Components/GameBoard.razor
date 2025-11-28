@@ -171,11 +171,38 @@
         {
             if (cell.IsHit && cell.HasShip)
             {
-                builder.OpenElement(0, "img");
-                builder.AddAttribute(1, "src", "images/hit.png");
-                builder.AddAttribute(2, "alt", "Touché");
-                builder.AddAttribute(3, "class", "hit-icon");
-                builder.CloseElement();
+                // Afficher le bateau coulé si coulé ET si c'est la cellule de départ, sinon hit classique
+                if (cell.IsSunk && cell.ShipType.HasValue && cell.IsShipStart)
+                {
+                    string imageName = cell.ShipType.Value.ToString() + ".png";
+                    int size = cell.ShipType.Value.GetSize();
+                    string style;
+                    
+                    if (cell.IsHorizontal)
+                    {
+                        int totalHeight = size * 35 + (size - 1) * 2;
+                        style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 35px; left: 0; z-index: 10; pointer-events: none; object-fit: fill; transform: rotate(-90deg); transform-origin: top left;";
+                    }
+                    else
+                    {
+                        int totalHeight = size * 35 + (size - 1) * 2;
+                        style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; object-fit: fill;";
+                    }
+                    
+                    builder.OpenElement(0, "img");
+                    builder.AddAttribute(1, "src", $"images/ships/{imageName}");
+                    builder.AddAttribute(2, "alt", "Coulé");
+                    builder.AddAttribute(3, "style", style);
+                    builder.CloseElement();
+                }
+                else
+                {
+                    builder.OpenElement(0, "img");
+                    builder.AddAttribute(1, "src", "images/hit.png");
+                    builder.AddAttribute(2, "alt", "Touché");
+                    builder.AddAttribute(3, "class", "hit-icon");
+                    builder.CloseElement();
+                }
             }
             else if (cell.IsHit)
             {
@@ -211,7 +238,7 @@
                     }
                     
                     builder.OpenElement(0, "img");
-                    builder.AddAttribute(1, "src", $"images/ships/leChat/{imageName}");
+                    builder.AddAttribute(1, "src", $"images/ships/{imageName}");
                     builder.AddAttribute(2, "alt", cell.ShipType.Value.ToString());
                     builder.AddAttribute(3, "style", style);
                     builder.CloseElement();
@@ -224,13 +251,7 @@
                     builder.CloseElement();
                 }
 
-                if (cell.IsHit)
-                {
-                    builder.OpenElement(4, "div");
-                    builder.AddAttribute(5, "style", "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex; align-items: center; justify-content: center; background-color: rgba(255, 0, 0, 0.5); color: white; font-weight: bold;");
-                    builder.AddContent(6, "X");
-                    builder.CloseElement();
-                }
+                // Pas de superposition rouge sur la grille du joueur
             }
             else if (cell.IsHit)
             {

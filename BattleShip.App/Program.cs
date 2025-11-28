@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using BattleShip.App;
 using BattleShip.App.Services;
 using Grpc.Net.Client;
@@ -26,6 +27,11 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddSingleton<GameState>();
-builder.Services.AddScoped<MultiplayerGameService>();
+builder.Services.AddScoped<MultiplayerGameClient>(sp => 
+{
+    var httpClient = sp.GetRequiredService<HttpClient>();
+    var jsRuntime = sp.GetRequiredService<IJSRuntime>();
+    return new MultiplayerGameClient(httpClient, jsRuntime);
+});
 
 await builder.Build().RunAsync();

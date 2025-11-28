@@ -1,13 +1,12 @@
 @page "/multiplayer"
+@page "/multiplayer/{gameId?}"
 @using BattleShip.Models
 @using BattleShip.App.Services
 @using BattleShip.App.Components
 @using Microsoft.AspNetCore.Components
-@inject MultiplayerGameService MultiplayerService
+@inject MultiplayerGameClient MultiplayerService
 @inject NavigationManager Navigation
 @implements IDisposable
-
-<h1 class="page-title">Bataille Navale - Multijoueur</h1>
 
 <div class="multiplayer-container">
     @if (CurrentPhase == GamePhase.Lobby)
@@ -51,58 +50,58 @@
     }
     else if (CurrentPhase == GamePhase.Playing)
     {
-        <div class="game-phase">
-            <h1>Bataille Navale - Multijoueur</h1>
-            
+        <GamePopup 
+            IsVisible="CurrentPhase == GamePhase.GameOver"
+            IsVictory="IsVictory"
+            OnRestart="StartNewGame"
+            OnBackToMenu="GoBack" />
+
+        <div class="game-container">
             <div class="game-info">
                 <div class="player-info">
-                    <p><strong>Vous</strong> vs <strong>@OpponentName</strong></p>
+                    <p><strong>@(MultiplayerService.PlayerName ?? "Vous")</strong> vs <strong>@OpponentName</strong></p>
                     <p class="turn-indicator @(IsMyTurn ? "my-turn" : "opponent-turn")">
                         @(IsMyTurn ? "🎯 C'est votre tour" : "⏳ Tour de l'adversaire")
                     </p>
                 </div>
-                <button class="leave-button" @onclick="LeaveGame">Quitter</button>
+                <button class="game-btn leave-button" @onclick="LeaveGame">Quitter</button>
             </div>
 
             <div class="boards-container">
                 <div class="board-section">
-                    <h3>Votre grille</h3>
-                    <GameBoard 
-                        BoardData="MultiplayerService.MyBoard?.Grid"
-                        IsOpponentBoard="false"
-                        RowClassName="game-board-row"
-                        GetCustomCellClass="GetMyCellClass" />
+                    <h3 class="board-title player-title">Votre Grille</h3>
+                    <div class="board-wrapper">
+                        <GameBoard 
+                            BoardData="MultiplayerService.MyBoard?.Grid"
+                            GridSize="@(MultiplayerService.MyBoard?.Grid?.GetLength(0) ?? 10)"
+                            IsOpponentBoard="false" />
+                    </div>
                 </div>
 
                 <div class="board-section">
-                    <h3>Grille adverse</h3>
-                    <GameBoard 
-                        BoardData="MultiplayerService.OpponentBoard?.Grid"
-                        IsOpponentBoard="true"
-                        IsClickable="IsMyTurn"
-                        RowClassName="game-board-row"
-                        OnCellClick="HandleAttackClick"
-                        GetCustomCellClass="GetOpponentCellClass" />
+                    <h3 class="board-title opponent-title">Grille Adverse</h3>
+                    <div class="board-wrapper">
+                        <GameBoard 
+                            BoardData="MultiplayerService.OpponentBoard?.Grid"
+                            GridSize="@(MultiplayerService.OpponentBoard?.Grid?.GetLength(0) ?? 10)"
+                            IsOpponentBoard="true"
+                            IsClickable="IsMyTurn && CurrentPhase == GamePhase.Playing"
+                            OnCellClick="HandleAttackClick" />
+                    </div>
                 </div>
             </div>
 
             @if (MultiplayerService.History.Count > 0)
             {
-                <AttackHistoryList 
-                    History="MultiplayerService.History"
-                    Title="Historique (10 derniers coups)"
-                    MaxItems="10"
-                    PlayerName="Vous"
-                    OpponentName="@OpponentName" />
+                <div class="history-section">
+                    <AttackHistoryList 
+                        History="MultiplayerService.History"
+                        Title="Historique des coups"
+                        MaxItems="50"
+                        PlayerName="@(MultiplayerService.PlayerName ?? "Vous")"
+                        OpponentName="@OpponentName" />
+                </div>
             }
-        </div>
-    }
-    else if (CurrentPhase == GamePhase.GameOver)
-    {
-        <div class="game-over">
-            <h1>@GameOverMessage</h1>
-            <button class="new-game-button" @onclick="StartNewGame">Nouvelle partie</button>
-            <button class="back-button" @onclick="GoBack">Menu principal</button>
         </div>
     }
 
@@ -115,6 +114,8 @@
 </div>
 
 @code {
+    [Parameter] public string? GameId { get; set; }
+
     private enum GamePhase
     {
         Lobby,
@@ -129,14 +130,15 @@
     private string? OpponentName { get; set; }
     private bool OpponentReady { get; set; }
     private bool IsMyTurn { get; set; }
+    private bool IsVictory { get; set; }
     private string Message { get; set; } = "";
     private string MessageClass { get; set; } = "";
     private string GameOverMessage { get; set; } = "";
 
+    private bool _isInitialized = false;
+
     protected override async Task OnInitializedAsync()
     {
-        await MultiplayerService.InitializeAsync();
-
         MultiplayerService.OnWaitingForOpponent += HandleWaitingForOpponent;
         MultiplayerService.OnGameJoined += HandleGameJoined;
         MultiplayerService.OnOpponentJoined += HandleOpponentJoined;
@@ -148,6 +150,62 @@
         MultiplayerService.OnGameWon += HandleGameWon;
         MultiplayerService.OnGameLost += HandleGameLost;
         MultiplayerService.OnOpponentDisconnected += HandleOpponentDisconnected;
+        
+        // Si on a un GameId dans l'URL, essayer de restaurer
+        if (!string.IsNullOrEmpty(GameId))
+        {
+            PlayerName = await MultiplayerService.GetStoredPlayerNameAsync() ?? "Joueur";
+            if (!string.IsNullOrEmpty(PlayerName))
+            {
+                CurrentPhase = GamePhase.WaitingForOpponent;
+                Message = "Reconnexion en cours...";
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_isInitialized)
+        {
+            _isInitialized = true;
+            await MultiplayerService.InitializeAsync();
+            
+            // Essayer de restaurer un jeu sauvegardé
+            var gameRestored = await MultiplayerService.TryRestoreGameAsync();
+            if (gameRestored)
+            {
+                RestoreGameState();
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void RestoreGameState()
+    {
+        if (!string.IsNullOrEmpty(MultiplayerService.OpponentName))
+        {
+            OpponentName = MultiplayerService.OpponentName;
+            
+            if (MultiplayerService.MyBoard != null && MultiplayerService.OpponentBoard != null)
+            {
+                CurrentPhase = GamePhase.Playing;
+                IsMyTurn = MultiplayerService.IsMyTurn;
+                Message = IsMyTurn ? "Partie restaurée - C'est votre tour" : "Partie restaurée - Tour de l'adversaire";
+            }
+            else if (MultiplayerService.MyBoard != null)
+            {
+                CurrentPhase = GamePhase.Placement;
+                Message = "En attente de l'adversaire...";
+            }
+            else
+            {
+                CurrentPhase = GamePhase.Placement;
+                Message = "Placez vos bateaux";
+            }
+        }
+        
+        StateHasChanged();
     }
 
     private async Task JoinGame()
@@ -167,6 +225,9 @@
         OpponentName = opponentName;
         CurrentPhase = GamePhase.Placement;
         Message = $"Adversaire trouvé: {opponentName}";
+        
+        // Naviguer vers l'URL avec le GameId pour la persistance
+        Navigation.NavigateTo($"/multiplayer/{gameId}", replace: true);
         StateHasChanged();
     }
 
@@ -175,6 +236,9 @@
         OpponentName = opponentName;
         CurrentPhase = GamePhase.Placement;
         Message = $"Adversaire trouvé: {opponentName}";
+        
+        // Naviguer vers l'URL avec le GameId pour la persistance
+        Navigation.NavigateTo($"/multiplayer/{gameId}", replace: true);
         StateHasChanged();
     }
 
@@ -280,6 +344,7 @@
     private void HandleGameWon()
     {
         CurrentPhase = GamePhase.GameOver;
+        IsVictory = true;
         GameOverMessage = "🎉 Victoire ! Vous avez gagné !";
         StateHasChanged();
     }
@@ -287,6 +352,7 @@
     private void HandleGameLost()
     {
         CurrentPhase = GamePhase.GameOver;
+        IsVictory = false;
         GameOverMessage = "😢 Défaite ! Vous avez perdu.";
         StateHasChanged();
     }
@@ -296,6 +362,7 @@
         Message = "L'adversaire s'est déconnecté";
         MessageClass = "error";
         CurrentPhase = GamePhase.GameOver;
+        IsVictory = false;
         GameOverMessage = "L'adversaire s'est déconnecté";
         StateHasChanged();
     }
@@ -320,8 +387,10 @@
         CurrentPhase = GamePhase.Lobby;
         OpponentName = null;
         OpponentReady = false;
+        IsVictory = false;
         Message = "";
         GameOverMessage = "";
+        PlayerName = "";
         StateHasChanged();
     }
 
@@ -330,38 +399,7 @@
         Navigation.NavigateTo("/");
     }
 
-    private string GetMyCellClass(Cell? cell)
-    {
-        if (cell == null) return "board-cell";
-        
-        var classes = new List<string> { "board-cell" };
-        
-        if (cell.HasShip)
-        {
-            classes.Add("ship");
-        }
-        
-        if (cell.IsHit)
-        {
-            classes.Add(cell.HasShip ? "hit" : "miss");
-        }
-        
-        return string.Join(" ", classes);
-    }
 
-    private string GetOpponentCellClass(Cell? cell)
-    {
-        if (cell == null) return "board-cell";
-        
-        var classes = new List<string> { "board-cell" };
-        
-        if (cell.IsHit)
-        {
-            classes.Add(cell.HasShip ? "hit" : "miss");
-        }
-        
-        return string.Join(" ", classes);
-    }
 
     public void Dispose()
     {

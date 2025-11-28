@@ -1,6 +1,7 @@
 using BattleShip.Models;
 using System.Net.Http.Json;
 using BattleShip.API.Protos;
+using Microsoft.AspNetCore.Components;
 
 namespace BattleShip.App.Services;
 
@@ -8,8 +9,14 @@ public class GameState
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly BattleshipService.BattleshipServiceClient _grpcClient;
+    private NavigationManager? _navigationManager;
     
     public event Action? OnStateChanged;
+
+    public void SetNavigationManager(NavigationManager navigationManager)
+    {
+        _navigationManager = navigationManager;
+    }
     
     public string? GameId { get; set; }
     public Cell[,]? PlayerBoard { get; set; }
@@ -57,6 +64,48 @@ public class GameState
         }
     }
 
+    public async Task<bool> TryRestoreGame(string? gameId)
+    {
+        if (string.IsNullOrEmpty(gameId))
+        {
+            return false;
+        }
+
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
+            var response = await httpClient.GetAsync($"/game/{gameId}/state");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<GameStateResponse>();
+                if (result != null)
+                {
+                    GameId = result.GameId;
+                    PlayerBoard = ConvertToBoard(result.PlayerBoard);
+                    OpponentBoard = ConvertToBoard(result.OpponentBoard);
+                    GameOver = result.GameOver;
+                    PlayerWon = result.PlayerWon;
+                    HitCount = result.HitCount;
+                    Message = result.Message;
+                    History = result.History.Select(h => new AttackHistory(h.X, h.Y, h.Hit, h.IsPlayer)
+                    {
+                        Timestamp = h.Timestamp
+                    }).ToList();
+                    
+                    NotifyStateChanged();
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de la restauration de la partie: {ex.Message}");
+        }
+        
+        return false;
+    }
+
     public async Task StartNewGameWithPlacements(List<ShipPlacement> placements, int gridSize = 10)
     {
         PlayerBoard = new Cell[gridSize, gridSize];
@@ -98,6 +147,9 @@ public class GameState
         if (result != null)
         {
             GameId = result.GameId;
+            
+            // Naviguer vers l'URL avec le GameId pour la persistance
+            _navigationManager?.NavigateTo($"/game/{GameId}", false);
             
             // Envoyer les placements du joueur à l'API
             var placementResponse = await httpClient.PostAsJsonAsync($"/game/{GameId}/place-ships", placements);
@@ -182,20 +234,31 @@ public class GameState
                 board[cell.X, cell.Y].IsHit = cell.IsHit;
                 board[cell.X, cell.Y].HasShip = cell.HasShip;
                 board[cell.X, cell.Y].IsSunk = cell.IsSunk;
+                board[cell.X, cell.Y].IsShipStart = cell.IsShipStart;
+                board[cell.X, cell.Y].IsHorizontal = cell.IsHorizontal;
+                if (cell.ShipType >= 0)
+                {
+                    board[cell.X, cell.Y].ShipType = (ShipType)cell.ShipType;
+                }
             }
         }
     }
 
     private Cell[,] ConvertToBoard(BoardDto boardDto)
     {
-        var board = new Cell[Board.Size, Board.Size];
+        int boardSize = (int)Math.Sqrt(boardDto.Cells.Count);
+        var board = new Cell[boardSize, boardSize];
         
         foreach (var cell in boardDto.Cells)
         {
             board[cell.X, cell.Y] = new Cell(cell.X, cell.Y)
             {
                 HasShip = cell.HasShip,
-                IsHit = cell.IsHit
+                IsHit = cell.IsHit,
+                IsSunk = cell.IsSunk,
+                IsShipStart = cell.IsShipStart,
+                IsHorizontal = cell.IsHorizontal,
+                ShipType = cell.ShipType >= 0 ? (ShipType)cell.ShipType : null
             };
         }
         
@@ -211,7 +274,11 @@ public class GameState
             board[cell.X, cell.Y] = new Cell(cell.X, cell.Y)
             {
                 HasShip = cell.HasShip,
-                IsHit = cell.IsHit
+                IsHit = cell.IsHit,
+                IsSunk = cell.IsSunk,
+                IsShipStart = cell.IsShipStart,
+                IsHorizontal = cell.IsHorizontal,
+                ShipType = cell.ShipType >= 0 ? (ShipType)cell.ShipType : null
             };
         }
         
@@ -222,6 +289,27 @@ public class GameState
     {
         public string GameId { get; set; } = "";
         public BoardDto PlayerBoard { get; set; } = new();
+    }
+
+    private class GameStateResponse
+    {
+        public string GameId { get; set; } = "";
+        public BoardDto PlayerBoard { get; set; } = new();
+        public BoardDto OpponentBoard { get; set; } = new();
+        public bool GameOver { get; set; }
+        public bool PlayerWon { get; set; }
+        public int HitCount { get; set; }
+        public List<AttackHistoryDto> History { get; set; } = new();
+        public string Message { get; set; } = "";
+    }
+
+    private class AttackHistoryDto
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public bool Hit { get; set; }
+        public bool IsPlayer { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 
     private class BoardDto
@@ -235,5 +323,9 @@ public class GameState
         public int Y { get; set; }
         public bool HasShip { get; set; }
         public bool IsHit { get; set; }
+        public bool IsSunk { get; set; }
+        public int ShipType { get; set; } = -1;
+        public bool IsShipStart { get; set; }
+        public bool IsHorizontal { get; set; }
     }
 }
