@@ -48,9 +48,9 @@
             <ShipPlacementUI OnPlacementsConfirmed="OnShipsPlaced" />
         </div>
     }
-    else if (CurrentPhase == GamePhase.Playing)
+    else if (CurrentPhase == GamePhase.Playing || CurrentPhase == GamePhase.GameOver)
     {
-        <GamePopup 
+        <GamePopup
             IsVisible="CurrentPhase == GamePhase.GameOver"
             IsVictory="IsVictory"
             OnRestart="StartNewGame"
@@ -71,7 +71,7 @@
                 <div class="board-section">
                     <h3 class="board-title player-title">Votre Grille</h3>
                     <div class="board-wrapper">
-                        <GameBoard 
+                        <GameBoard
                             BoardData="MultiplayerService.MyBoard?.Grid"
                             GridSize="@(MultiplayerService.MyBoard?.Grid?.GetLength(0) ?? 10)"
                             IsOpponentBoard="false" />
@@ -81,7 +81,7 @@
                 <div class="board-section">
                     <h3 class="board-title opponent-title">Grille Adverse</h3>
                     <div class="board-wrapper">
-                        <GameBoard 
+                        <GameBoard
                             BoardData="MultiplayerService.OpponentBoard?.Grid"
                             GridSize="@(MultiplayerService.OpponentBoard?.Grid?.GetLength(0) ?? 10)"
                             IsOpponentBoard="true"
@@ -94,7 +94,7 @@
             @if (MultiplayerService.History.Count > 0)
             {
                 <div class="history-section">
-                    <AttackHistoryList 
+                    <AttackHistoryList
                         History="MultiplayerService.History"
                         Title="Historique des coups"
                         MaxItems="50"
@@ -150,7 +150,7 @@
         MultiplayerService.OnGameWon += HandleGameWon;
         MultiplayerService.OnGameLost += HandleGameLost;
         MultiplayerService.OnOpponentDisconnected += HandleOpponentDisconnected;
-        
+
         // Si on a un GameId dans l'URL, essayer de restaurer
         if (!string.IsNullOrEmpty(GameId))
         {
@@ -169,14 +169,13 @@
         {
             _isInitialized = true;
             await MultiplayerService.InitializeAsync();
-            
-            // Essayer de restaurer un jeu sauvegardé
+
             var gameRestored = await MultiplayerService.TryRestoreGameAsync();
             if (gameRestored)
             {
                 RestoreGameState();
             }
-            
+
             StateHasChanged();
         }
     }
@@ -186,7 +185,7 @@
         if (!string.IsNullOrEmpty(MultiplayerService.OpponentName))
         {
             OpponentName = MultiplayerService.OpponentName;
-            
+
             if (MultiplayerService.MyBoard != null && MultiplayerService.OpponentBoard != null)
             {
                 CurrentPhase = GamePhase.Playing;
@@ -204,7 +203,7 @@
                 Message = "Placez vos bateaux";
             }
         }
-        
+
         StateHasChanged();
     }
 
@@ -225,8 +224,7 @@
         OpponentName = opponentName;
         CurrentPhase = GamePhase.Placement;
         Message = $"Adversaire trouvé: {opponentName}";
-        
-        // Naviguer vers l'URL avec le GameId pour la persistance
+
         Navigation.NavigateTo($"/multiplayer/{gameId}", replace: true);
         StateHasChanged();
     }
@@ -236,8 +234,7 @@
         OpponentName = opponentName;
         CurrentPhase = GamePhase.Placement;
         Message = $"Adversaire trouvé: {opponentName}";
-        
-        // Naviguer vers l'URL avec le GameId pour la persistance
+
         Navigation.NavigateTo($"/multiplayer/{gameId}", replace: true);
         StateHasChanged();
     }
@@ -282,7 +279,7 @@
             StateHasChanged();
         }
     }
-    
+
     private async Task HandleAttackClick((int x, int y) coords)
     {
         await Attack(coords.x, coords.y);
@@ -291,7 +288,7 @@
     private void HandleAttackResult(int x, int y, bool hit, bool sunk, bool gameOver)
     {
         IsMyTurn = MultiplayerService.IsMyTurn;
-        
+
         if (gameOver)
         {
             return;
@@ -307,7 +304,7 @@
             Message = "Raté";
             MessageClass = "info";
         }
-        
+
         StateHasChanged();
     }
 
@@ -315,7 +312,7 @@
     {
         if (gameOver)
         {
-            // Will be handled by OnGameLost
+
             return;
         }
 
@@ -329,7 +326,7 @@
             Message = "L'adversaire a raté";
             MessageClass = "info";
         }
-        
+
         StateHasChanged();
     }
 
@@ -398,8 +395,6 @@
     {
         Navigation.NavigateTo("/");
     }
-
-
 
     public void Dispose()
     {

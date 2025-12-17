@@ -10,14 +10,14 @@ public class GameState
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly BattleshipService.BattleshipServiceClient _grpcClient;
     private NavigationManager? _navigationManager;
-    
+
     public event Action? OnStateChanged;
 
     public void SetNavigationManager(NavigationManager navigationManager)
     {
         _navigationManager = navigationManager;
     }
-    
+
     public string? GameId { get; set; }
     public Cell[,]? PlayerBoard { get; set; }
     public Cell[,]? OpponentBoard { get; set; }
@@ -37,17 +37,17 @@ public class GameState
 
     public async Task StartNewGame()
     {
-        // Use REST endpoint for starting game (as specified in PDF)
+
         var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
         var response = await httpClient.PostAsync("/game/start", null);
         var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
-        
+
         if (result != null)
         {
             GameId = result.GameId;
             PlayerBoard = ConvertToBoard(result.PlayerBoard);
             OpponentBoard = new Cell[Board.Size, Board.Size];
-            
+
             for (int x = 0; x < Board.Size; x++)
             {
                 for (int y = 0; y < Board.Size; y++)
@@ -55,7 +55,7 @@ public class GameState
                     OpponentBoard[x, y] = new Cell(x, y);
                 }
             }
-            
+
             GameOver = false;
             PlayerWon = false;
             HitCount = 0;
@@ -75,7 +75,7 @@ public class GameState
         {
             var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
             var response = await httpClient.GetAsync($"/game/{gameId}/state");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<GameStateResponse>();
@@ -92,7 +92,7 @@ public class GameState
                     {
                         Timestamp = h.Timestamp
                     }).ToList();
-                    
+
                     NotifyStateChanged();
                     return true;
                 }
@@ -102,7 +102,7 @@ public class GameState
         {
             Console.WriteLine($"Erreur lors de la restauration de la partie: {ex.Message}");
         }
-        
+
         return false;
     }
 
@@ -121,12 +121,12 @@ public class GameState
         foreach (var placement in placements)
         {
             playerBoardModel.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal, placement.ShipType);
-            
+
             for (int i = 0; i < placement.Size; i++)
             {
                 int posX = placement.IsHorizontal ? placement.X + i : placement.X;
                 int posY = placement.IsHorizontal ? placement.Y : placement.Y + i;
-                
+
                 if (posX < gridSize && posY < gridSize)
                 {
                     PlayerBoard[posX, posY].HasShip = true;
@@ -139,19 +139,16 @@ public class GameState
         }
 
         var httpClient = _httpClientFactory.CreateClient("BattleShipAPI");
-        
-        // Créer la partie
+
         var response = await httpClient.PostAsync($"/game/start?gridSize={gridSize}", null);
         var result = await response.Content.ReadFromJsonAsync<StartGameResponse>();
-        
+
         if (result != null)
         {
             GameId = result.GameId;
-            
-            // Naviguer vers l'URL avec le GameId pour la persistance
+
             _navigationManager?.NavigateTo($"/game/{GameId}", false);
-            
-            // Envoyer les placements du joueur à l'API
+
             var placementResponse = await httpClient.PostAsJsonAsync($"/game/{GameId}/place-ships", placements);
             if (!placementResponse.IsSuccessStatusCode)
             {
@@ -161,9 +158,9 @@ public class GameState
             {
                 Console.WriteLine($"Placements envoyés avec succès pour GameId: {GameId}");
             }
-            
+
             OpponentBoard = new Cell[gridSize, gridSize];
-            
+
             for (int x = 0; x < gridSize; x++)
             {
                 for (int y = 0; y < gridSize; y++)
@@ -171,7 +168,7 @@ public class GameState
                     OpponentBoard[x, y] = new Cell(x, y);
                 }
             }
-            
+
             GameOver = false;
             PlayerWon = false;
             HitCount = 0;
@@ -186,30 +183,29 @@ public class GameState
 
         try
         {
-            var request = new AttackRequestGRPC 
-            { 
+            var request = new AttackRequestGRPC
+            {
                 GameId = GameId,
-                X = x, 
-                Y = y 
+                X = x,
+                Y = y
             };
-            
+
             var response = await _grpcClient.AttackAsync(request);
-            
-            // Mettre à jour les boards avec les données complètes du serveur (incluant IsSunk)
+
             UpdateBoardFromGrpc(OpponentBoard!, response.OpponentBoard, OpponentBoard!.GetLength(0));
             UpdateBoardFromGrpc(PlayerBoard!, response.PlayerBoard, PlayerBoard!.GetLength(0));
-            
+
             GameOver = response.GameOver;
             PlayerWon = response.PlayerWon;
             HitCount = response.HitCount;
             Message = response.Message;
-            
+
             History.Add(new AttackHistory(x, y, response.Hit, true));
             if (response.AiAttack != null)
             {
                 History.Add(new AttackHistory(response.AiAttack.X, response.AiAttack.Y, response.AiAttack.Hit, false));
             }
-            
+
             NotifyStateChanged();
             return true;
         }
@@ -248,7 +244,7 @@ public class GameState
     {
         int boardSize = (int)Math.Sqrt(boardDto.Cells.Count);
         var board = new Cell[boardSize, boardSize];
-        
+
         foreach (var cell in boardDto.Cells)
         {
             board[cell.X, cell.Y] = new Cell(cell.X, cell.Y)
@@ -261,14 +257,14 @@ public class GameState
                 ShipType = cell.ShipType >= 0 ? (ShipType)cell.ShipType : null
             };
         }
-        
+
         return board;
     }
 
     private Cell[,] ConvertGrpcBoardToArray(API.Protos.BoardDto boardDto)
     {
         var board = new Cell[Board.Size, Board.Size];
-        
+
         foreach (var cell in boardDto.Cells)
         {
             board[cell.X, cell.Y] = new Cell(cell.X, cell.Y)
@@ -281,7 +277,7 @@ public class GameState
                 ShipType = cell.ShipType >= 0 ? (ShipType)cell.ShipType : null
             };
         }
-        
+
         return board;
     }
 

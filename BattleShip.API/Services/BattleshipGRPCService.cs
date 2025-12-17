@@ -43,10 +43,8 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Case déjà attaquée"));
         }
 
-        // Enregistrer l'attaque du joueur dans l'historique
         game.History.Add(new AttackHistory(request.X, request.Y, hit, true));
 
-        // Vérifier si un bateau a été coulé par le joueur
         List<Ship> previousPlayerSunkShips = game.OpponentBoard.Ships
             .Where(ship => ship.IsSunk(game.OpponentBoard.Grid))
             .ToList();
@@ -90,16 +88,15 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
 
         if (!playerWon)
         {
-            // Obtenir ou créer l'instance d'IA pour cette partie
+
             var ai = _aiInstances.GetOrAdd(request.GameId, _ => {
                 _logger.LogInformation("[gRPC IA] Création d'une nouvelle instance SmartAI pour GameId: {GameId}", request.GameId);
                 return new SmartAI();
             });
 
-            _logger.LogInformation("[gRPC IA DEBUG AVANT] GameId: {GameId}, Mode: {Mode}, LastHits: {HitsCount}, PendingTargets: {PendingCount}", 
+            _logger.LogInformation("[gRPC IA DEBUG AVANT] GameId: {GameId}, Mode: {Mode}, LastHits: {HitsCount}, PendingTargets: {PendingCount}",
                 request.GameId, ai.GetCurrentMode(), ai.GetLastHitsCount(), ai.GetPendingTargetsCount());
 
-            // Créer un tableau des cases déjà attaquées
             bool[,] attackedCells = new bool[game.PlayerBoard.CurrentSize, game.PlayerBoard.CurrentSize];
             for (int x = 0; x < game.PlayerBoard.CurrentSize; x++)
             {
@@ -109,7 +106,6 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
                 }
             }
 
-            // L'IA choisit sa cible
             (aiX, aiY) = ai.GetNextAttack(attackedCells, game.PlayerBoard.CurrentSize);
             foundTarget = true;
 
@@ -118,26 +114,22 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
                 var (aiHitResult, _) = game.PlayerBoard.Attack(aiX, aiY);
                 aiHit = aiHitResult;
 
-                // Informer l'IA du résultat de son attaque
                 ai.RegisterHit(aiX, aiY, aiHit);
 
-                _logger.LogInformation("[gRPC IA DEBUG APRES] Mode: {Mode}, LastHits: {HitsCount}, PendingTargets: {PendingCount}", 
+                _logger.LogInformation("[gRPC IA DEBUG APRES] Mode: {Mode}, LastHits: {HitsCount}, PendingTargets: {PendingCount}",
                     ai.GetCurrentMode(), ai.GetLastHitsCount(), ai.GetPendingTargetsCount());
 
-                // Enregistrer l'attaque de l'IA dans l'historique
                 game.History.Add(new AttackHistory(aiX, aiY, aiHit, false));
 
-                // Vérifier si l'IA a coulé un bateau du joueur
                 List<Ship> previousAISunkShips = game.PlayerBoard.Ships
                     .Where(ship => ship.IsSunk(game.PlayerBoard.Grid))
                     .ToList();
                 int previousAISunkCount = previousAISunkShips.Count;
-                
+
                 List<Ship> aiSunkShips = game.PlayerBoard.Ships
                     .Where(ship => ship.IsSunk(game.PlayerBoard.Grid))
                     .ToList();
 
-                // Si un nouveau bateau a été coulé, notifier l'IA
                 if (aiSunkShips.Count > previousAISunkCount)
                 {
                     _logger.LogInformation("[gRPC IA] L'IA a coulé un bateau ! Total: {SunkCount}/5", aiSunkShips.Count);
@@ -223,8 +215,7 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
     {
         var boardDto = new BoardDto();
         var sunkPositions = new HashSet<(int X, int Y)>();
-        
-        // Collecter toutes les positions des bateaux coulés
+
         foreach (var ship in sunkShips)
         {
             foreach (var pos in ship.Positions)
@@ -239,7 +230,7 @@ public class BattleshipGRPCService : BattleshipService.BattleshipServiceBase
             {
                 var cell = board.Grid[x, y];
                 bool isSunkPosition = sunkPositions.Contains((x, y));
-                
+
                 boardDto.Cells.Add(new CellDto
                 {
                     X = cell.X,

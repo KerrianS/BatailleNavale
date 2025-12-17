@@ -79,7 +79,6 @@ code {
     color: #c02d76;
 }
 
-/* Remove default body margins */
 body {
     margin: 0;
     padding: 0;
@@ -111,9 +110,6 @@ button, .btn {
     text-align: start;
 }
 
-/* Bataille Navale Styles */
-
-/* Global Layout */
 .app-container {
     display: flex;
     flex-direction: column;
@@ -123,6 +119,8 @@ button, .btn {
 .main-content {
     flex: 1;
     padding: 2rem 0;
+    margin-left: var(--sidebar-width, 0px);
+    width: calc(100% - var(--sidebar-width, 0px));
 }
 
 .container {
@@ -159,7 +157,6 @@ button, .btn {
     color: #333;
 }
 
-/* Grilles avec coordonnées */
 .board-with-coordinates {
     display: inline-block;
 }
@@ -214,7 +211,6 @@ button, .btn {
     gap: 0;
 }
 
-/* Ancienne grille (compatibilité) */
 .board {
     display: grid;
     grid-template-columns: repeat(10, 40px);
@@ -250,8 +246,6 @@ button, .btn {
     transform: scale(1.05);
     box-shadow: 0 0 5px rgba(0, 119, 182, 0.5);
 }
-
-
 
 .grid-cell.ship {
     background: #4a90e2;
@@ -353,7 +347,6 @@ button, .btn {
     font-size: 1.2em;
 }
 
-/* Historique des coups */
 .history-section {
     margin-top: 30px;
     padding: 20px;
@@ -429,7 +422,6 @@ button, .btn {
     text-align: right;
 }
 
-/* Menu Buttons */
 .menu-buttons {
     display: flex;
     gap: 20px;
@@ -447,7 +439,6 @@ button, .btn {
     transform: translateY(-2px);
 }
 
-/* Ship Placement Component */
 .ship-placement-container {
     display: flex;
     gap: 2rem;
@@ -688,7 +679,6 @@ button, .btn {
     border-radius: 4px;
 }
 
-/* Multiplayer Page */
 .multiplayer-container {
     padding: 20px;
     max-width: 1400px;
@@ -967,7 +957,6 @@ button, .btn {
     border: 1px solid #ffeeba;
 }
 
-/* Header Styles */
 .app-header {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     color: white;
@@ -1024,7 +1013,6 @@ button, .btn {
     border-bottom: 2px solid #fff;
 }
 
-/* Footer Styles */
 .app-footer {
     background: #2c3e50;
     color: #ecf0f1;
@@ -1090,14 +1078,13 @@ button, .btn {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .header-nav {
         width: 100%;
         justify-content: center;
     }
 }
 
-/* Menu Container */
 .menu-container {
     position: relative;
     z-index: 10;
@@ -1107,7 +1094,6 @@ button, .btn {
     margin: 0 auto;
 }
 
-/* Menu Card */
 .menu-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
@@ -1149,7 +1135,6 @@ button, .btn {
     margin: 0;
 }
 
-/* Game Modes */
 .game-modes {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -1290,7 +1275,6 @@ button, .btn {
     margin: 0;
 }
 
-/* Grid Size Selector */
 .grid-size-selector {
     display: flex;
     align-items: center;
@@ -1331,7 +1315,6 @@ button, .btn {
     box-shadow: 0 4px 10px rgba(0, 119, 182, 0.3);
 }
 
-/* Game Page Styles */
 .game-container {
     position: relative;
     z-index: 1;
@@ -1554,7 +1537,6 @@ button, .btn {
     border: 2px solid rgba(0, 119, 182, 0.3);
 }
 
-/* Responsive */
 @media (max-width: 968px) {
     .ship-placement-container {
         flex-direction: column;
@@ -1617,15 +1599,15 @@ button, .btn {
     .menu-card {
         padding: 2rem 1.5rem;
     }
-    
+
     .title {
         font-size: 2rem;
     }
-    
+
     .game-modes {
         grid-template-columns: 1fr;
     }
-    
+
     .boat {
         font-size: 2rem;
     }

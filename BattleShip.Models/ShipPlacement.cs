@@ -11,11 +11,11 @@ public class ShipPlacement
 
 public enum ShipType
 {
-    Carrier,        // Porte-avions (5)
-    Battleship,     // Croiseur (4)
-    Cruiser,        // Contre-torpilleur (3)
-    Submarine,      // Sous-marin (3)
-    Destroyer       // Torpilleur (2)
+    Carrier,
+    Battleship,
+    Cruiser,
+    Submarine,
+    Destroyer
 }
 
 public static class ShipTypeExtensions

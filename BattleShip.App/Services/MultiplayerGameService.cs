@@ -90,7 +90,7 @@ public class MultiplayerGameClient
                     OpponentBoard.Grid[x, y].HasShip = true;
                     if (sunk && sunkShipData != null)
                     {
-                        // Mettre à jour les propriétés du bateau coulé pour le reveal
+
                         var shipDataJson = System.Text.Json.JsonSerializer.Serialize(sunkShipData);
                         var shipData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(shipDataJson);
                         if (shipData != null)
@@ -109,8 +109,7 @@ public class MultiplayerGameClient
                                 OpponentBoard.Grid[x, y].IsHorizontal = ((System.Text.Json.JsonElement)shipData["isHorizontal"]).GetBoolean();
                             }
                         }
-                        
-                        // Marquer tout le bateau comme coulé
+
                         OpponentBoard.MarkShipAsSunk(x, y);
                     }
                 }
@@ -141,7 +140,7 @@ public class MultiplayerGameClient
                 MyBoard.Grid[x, y].IsHit = true;
                 if (sunk && hit)
                 {
-                    // Marquer tout le bateau comme coulé
+
                     MyBoard.MarkShipAsSunk(x, y);
                 }
             }
@@ -187,10 +186,9 @@ public class MultiplayerGameClient
     {
         try
         {
-            // Restaurer l'état sauvegardé si il existe
+
             await RestoreGameStateAsync();
-            
-            // Si on a un jeu sauvegardé, essayer de le rejoindre
+
             if (!string.IsNullOrEmpty(GameId) && !string.IsNullOrEmpty(PlayerName))
             {
                 await ReconnectToGameAsync();
@@ -202,7 +200,7 @@ public class MultiplayerGameClient
             Console.WriteLine($"Failed to restore/reconnect game: {ex.Message}");
             await ClearGameStateAsync();
         }
-        
+
         return false;
     }
 
@@ -215,7 +213,7 @@ public class MultiplayerGameClient
         PlayerId = _hubConnection.ConnectionId;
         var gameId = await _hubConnection.InvokeAsync<string>("JoinGame", playerName);
         GameId = gameId;
-        
+
         await SaveGameStateAsync();
         return gameId;
     }
@@ -226,17 +224,16 @@ public class MultiplayerGameClient
             return;
 
         PlayerId = _hubConnection.ConnectionId;
-        
-        // Essayer de rejoindre le jeu existant
+
         var success = await _hubConnection.InvokeAsync<bool>("ReconnectToGame", GameId, PlayerName);
-        
+
         if (success)
         {
             await SaveGameStateAsync();
         }
         else
         {
-            // Le jeu n'existe plus, effacer l'état
+
             await ClearGameStateAsync();
             GameId = null;
             OpponentName = null;
@@ -266,7 +263,7 @@ public class MultiplayerGameClient
         {
             Console.WriteLine($"Error getting stored player name: {ex.Message}");
         }
-        
+
         return null;
     }
 
@@ -305,7 +302,6 @@ public class MultiplayerGameClient
             await _hubConnection.DisposeAsync();
         }
 
-        // Effacer l'état sauvegardé
         await ClearGameStateAsync();
 
         GameId = null;
@@ -383,7 +379,7 @@ public class MultiplayerGameClient
     private object? SerializeBoard(Board? board)
     {
         if (board == null) return null;
-        
+
         var cells = new List<object>();
         for (int x = 0; x < board.CurrentSize; x++)
         {
@@ -403,25 +399,25 @@ public class MultiplayerGameClient
                 });
             }
         }
-        
+
         return new { size = board.CurrentSize, cells };
     }
 
     private Board? DeserializeBoard(object? boardData)
     {
         if (boardData == null) return null;
-        
+
         try
         {
             var json = JsonSerializer.Serialize(boardData);
             var data = JsonSerializer.Deserialize<JsonElement>(json);
-            
+
             if (data.TryGetProperty("size", out var sizeElement) &&
                 data.TryGetProperty("cells", out var cellsElement))
             {
                 int size = sizeElement.GetInt32();
                 var board = new Board(size);
-                
+
                 foreach (var cellElement in cellsElement.EnumerateArray())
                 {
                     int x = cellElement.GetProperty("x").GetInt32();
@@ -432,7 +428,7 @@ public class MultiplayerGameClient
                     int shipTypeInt = cellElement.GetProperty("shipType").GetInt32();
                     bool isShipStart = cellElement.GetProperty("isShipStart").GetBoolean();
                     bool isHorizontal = cellElement.GetProperty("isHorizontal").GetBoolean();
-                    
+
                     var cell = board.Grid[x, y];
                     cell.HasShip = hasShip;
                     cell.IsHit = isHit;
@@ -441,7 +437,7 @@ public class MultiplayerGameClient
                     cell.IsShipStart = isShipStart;
                     cell.IsHorizontal = isHorizontal;
                 }
-                
+
                 return board;
             }
         }
@@ -449,7 +445,7 @@ public class MultiplayerGameClient
         {
             Console.WriteLine($"Error deserializing board: {ex.Message}");
         }
-        
+
         return null;
     }
 

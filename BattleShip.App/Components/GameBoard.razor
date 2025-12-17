@@ -22,8 +22,8 @@
                                 var cell = BoardData[x, y];
                                 var currentX = x;
                                 var currentY = y;
-                            
-                            <div class="@GetCellClass(cell)" 
+
+                            <div class="@GetCellClass(cell)"
                                  style="@GetCellStyle(cell)"
                                  @onclick="() => HandleCellClick(currentX, currentY)"
                                  @oncontextmenu="() => HandleCellRightClick(currentX, currentY)"
@@ -54,13 +54,13 @@
 
     [Parameter]
     public int GridSize { get; set; } = 10;
-    
+
     [Parameter]
     public bool IsOpponentBoard { get; set; }
-    
+
     [Parameter]
     public bool IsClickable { get; set; } = false;
-    
+
     [Parameter]
     public EventCallback<(int x, int y)> OnCellClick { get; set; }
 
@@ -72,13 +72,13 @@
 
     [Parameter]
     public EventCallback<(int x, int y)> OnCellRightClick { get; set; }
-    
+
     [Parameter]
     public Func<Cell, string>? GetCustomCellClass { get; set; }
-    
+
     [Parameter]
     public RenderFragment<Cell>? RenderCellContent { get; set; }
-    
+
     [Parameter]
     public string RowClassName { get; set; } = "board-row";
 
@@ -90,14 +90,14 @@
         }
 
         var classes = new List<string> { "cell" };
-        
+
         if (IsOpponentBoard)
         {
             if (IsClickable && !cell.IsHit)
             {
                 classes.Add("clickable");
             }
-            
+
             if (cell.IsHit)
             {
                 if (cell.IsSunk)
@@ -116,7 +116,7 @@
             {
                 classes.Add("ship");
             }
-            
+
             if (cell.IsHit)
             {
                 if (cell.IsSunk)
@@ -129,7 +129,7 @@
                 }
             }
         }
-        
+
         return string.Join(" ", classes);
     }
 
@@ -171,13 +171,13 @@
         {
             if (cell.IsHit && cell.HasShip)
             {
-                // Afficher le bateau coulé si coulé ET si c'est la cellule de départ, sinon hit classique
+
                 if (cell.IsSunk && cell.ShipType.HasValue && cell.IsShipStart)
                 {
                     string imageName = cell.ShipType.Value.ToString() + ".png";
                     int size = cell.ShipType.Value.GetSize();
                     string style;
-                    
+
                     if (cell.IsHorizontal)
                     {
                         int totalHeight = size * 35 + (size - 1) * 2;
@@ -188,7 +188,7 @@
                         int totalHeight = size * 35 + (size - 1) * 2;
                         style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; object-fit: fill;";
                     }
-                    
+
                     builder.OpenElement(0, "img");
                     builder.AddAttribute(1, "src", $"images/ships/{imageName}");
                     builder.AddAttribute(2, "alt", "Coulé");
@@ -220,23 +220,23 @@
                 if (cell.IsShipStart && cell.ShipType.HasValue)
                 {
                     string imageName = cell.ShipType.Value.ToString() + ".png";
-                    
+
                     int size = cell.ShipType.Value.GetSize();
                     string style;
-                    
+
                     if (cell.IsHorizontal)
                     {
-                        // Horizontal: rotation de 90° vers la droite, décalé d'une cellule vers le bas
+
                         int totalHeight = size * 35 + (size - 1) * 2;
                         style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 35px; left: 0; z-index: 1; pointer-events: none; object-fit: fill; transform: rotate(-90deg); transform-origin: top left;";
                     }
                     else
                     {
-                        // Vertical: l'image s'étend sur 'size' cellules verticalement
+
                         int totalHeight = size * 35 + (size - 1) * 2;
                         style = $"width: 35px; height: {totalHeight}px; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; object-fit: fill;";
                     }
-                    
+
                     builder.OpenElement(0, "img");
                     builder.AddAttribute(1, "src", $"images/ships/{imageName}");
                     builder.AddAttribute(2, "alt", cell.ShipType.Value.ToString());
@@ -245,13 +245,12 @@
                 }
                 else if (!cell.ShipType.HasValue)
                 {
-                    // Fallback for when ShipType is not set
+
                     builder.OpenElement(0, "span");
                     builder.AddContent(1, "■");
                     builder.CloseElement();
                 }
 
-                // Pas de superposition rouge sur la grille du joueur
             }
             else if (cell.IsHit)
             {

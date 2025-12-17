@@ -8,7 +8,7 @@ public class Ship
 
     public bool IsSunk(Cell[,] grid)
     {
-        // Un bateau est coulé si toutes ses positions sont touchées
+
         return Positions.All(pos => grid[pos.X, pos.Y].IsHit);
     }
 }

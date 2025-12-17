@@ -34,14 +34,14 @@ public class Board
         var ship = new Ship
         {
             Size = size,
-            Type = (ShipType)size // Approximation basée sur la taille
+            Type = (ShipType)size
         };
 
         for (int i = 0; i < size; i++)
         {
             int posX = isHorizontal ? x + i : x;
             int posY = isHorizontal ? y : y + i;
-            
+
             if (posX < CurrentSize && posY < CurrentSize)
             {
                 Grid[posX, posY].HasShip = true;
@@ -67,7 +67,7 @@ public class Board
         {
             int posX = isHorizontal ? x + i : x;
             int posY = isHorizontal ? y : y + i;
-            
+
             if (Grid[posX, posY].HasShip) return false;
         }
 
@@ -80,7 +80,7 @@ public class Board
             return (false, false);
 
         var cell = Grid[x, y];
-        
+
         if (cell.IsHit)
             return (cell.HasShip, true);
 
@@ -100,7 +100,7 @@ public class Board
 
     public Ship? GetShipAt(int x, int y)
     {
-        // TODO: Implement ship tracking
+
         return null;
     }
 
@@ -119,14 +119,12 @@ public class Board
 
     public void MarkShipAsSunk(int x, int y)
     {
-        // Trouver le bateau qui contient cette cellule et marquer toutes ses cellules comme coulées
+
         var cell = Grid[x, y];
         if (!cell.HasShip) return;
 
-        // Rechercher toutes les cellules du même bateau
         var shipCells = FindShipCells(x, y);
-        
-        // Marquer toutes les cellules du bateau comme coulées
+
         foreach (var (cellX, cellY) in shipCells)
         {
             Grid[cellX, cellY].IsSunk = true;
@@ -137,27 +135,23 @@ public class Board
     {
         var shipCells = new List<(int x, int y)>();
         var cell = Grid[startX, startY];
-        
+
         if (!cell.HasShip) return shipCells;
 
-        // Essayer de détecter la direction du bateau
         bool isHorizontal = cell.IsHorizontal;
-        
+
         if (isHorizontal)
         {
-            // Bateau horizontal - chercher vers la gauche puis vers la droite
+
             int minX = startX;
             int maxX = startX;
-            
-            // Chercher vers la gauche
+
             while (minX > 0 && Grid[minX - 1, startY].HasShip)
                 minX--;
-            
-            // Chercher vers la droite
+
             while (maxX < CurrentSize - 1 && Grid[maxX + 1, startY].HasShip)
                 maxX++;
-            
-            // Ajouter toutes les cellules du bateau
+
             for (int x = minX; x <= maxX; x++)
             {
                 shipCells.Add((x, startY));
@@ -165,25 +159,22 @@ public class Board
         }
         else
         {
-            // Bateau vertical - chercher vers le haut puis vers le bas
+
             int minY = startY;
             int maxY = startY;
-            
-            // Chercher vers le haut
+
             while (minY > 0 && Grid[startX, minY - 1].HasShip)
                 minY--;
-            
-            // Chercher vers le bas
+
             while (maxY < CurrentSize - 1 && Grid[startX, maxY + 1].HasShip)
                 maxY++;
-            
-            // Ajouter toutes les cellules du bateau
+
             for (int y = minY; y <= maxY; y++)
             {
                 shipCells.Add((startX, y));
             }
         }
-        
+
         return shipCells;
     }
 }

@@ -11,7 +11,6 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Register HttpClientFactory with named client
 builder.Services.AddHttpClient("BattleShipAPI", client =>
 {
     client.BaseAddress = new Uri("http://localhost:5001");
@@ -27,7 +26,7 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddSingleton<GameState>();
-builder.Services.AddScoped<MultiplayerGameClient>(sp => 
+builder.Services.AddScoped<MultiplayerGameClient>(sp =>
 {
     var httpClient = sp.GetRequiredService<HttpClient>();
     var jsRuntime = sp.GetRequiredService<IJSRuntime>();

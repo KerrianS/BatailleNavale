@@ -14,7 +14,7 @@
             {
                 var isSelected = SelectedShipType.HasValue && SelectedShipType.Value == ship.Type;
                 var currentShip = ship;
-                <button class="ship-button @(isSelected ? "selected" : "")" 
+                <button class="ship-button @(isSelected ? "selected" : "")"
                         @onclick="() => SelectShip(currentShip)"
                         @onclick:stopPropagation="true">
                     @ship.Name
@@ -42,7 +42,7 @@
     </div>
 
     <div class="placement-grid-section">
-        <GameBoard 
+        <GameBoard
             BoardData="PlacementBoard.Grid"
             GridSize="@GridSize"
             IsOpponentBoard="false"
@@ -108,7 +108,7 @@
             new ShipInfo { Name = "Sous-marin", Size = ShipType.Submarine.GetSize(), Type = ShipType.Submarine },
             new ShipInfo { Name = "Torpilleur", Size = ShipType.Destroyer.GetSize(), Type = ShipType.Destroyer }
         };
-        
+
         if (RemainingShips.Count > 0)
         {
             SelectedShipType = RemainingShips[0].Type;
@@ -131,7 +131,7 @@
 
     private void HandleRightClick((int x, int y) position)
     {
-        // Change l'orientation avec le clic droit
+
         IsHorizontal = !IsHorizontal;
         StateHasChanged();
     }
@@ -177,7 +177,7 @@
         }
 
         var currentShip = RemainingShips.First(s => s.Type == SelectedShipType.Value);
-        
+
         if (!PlacementBoard.CanPlaceShip(x, y, currentShip.Size, IsHorizontal))
         {
             ErrorMessage = "Impossible de placer le bateau ici";
@@ -185,7 +185,7 @@
         }
 
         PlacementBoard.PlaceShip(x, y, currentShip.Size, IsHorizontal, currentShip.Type);
-        
+
         Placements.Add(new ShipPlacement
         {
             X = x,
@@ -196,7 +196,7 @@
         });
 
         RemainingShips.RemoveAt(RemainingShips.FindIndex(s => s.Type == SelectedShipType.Value));
-        
+
         if (RemainingShips.Count > 0)
         {
             SelectedShipType = RemainingShips[0].Type;
@@ -222,13 +222,12 @@
     private string GetPlacementCellClass(Cell cell)
     {
         var classes = new List<string> { "grid-cell" };
-        
+
         if (cell.HasShip)
         {
             classes.Add("ship");
         }
 
-        // Add hover class
         var hoverClass = GetHoverClass(cell.X, cell.Y);
         if (!string.IsNullOrEmpty(hoverClass))
         {
@@ -241,17 +240,15 @@
     private string GetHoverClass(int x, int y)
     {
         if (!SelectedShipType.HasValue || HoverX == -1 || HoverY == -1) return "";
-        
+
         var selectedShip = RemainingShips.FirstOrDefault(s => s.Type == SelectedShipType.Value);
         if (selectedShip == null) return "";
-        
-        // Check if placement is valid at hover position
+
         bool canPlace = PlacementBoard.CanPlaceShip(HoverX, HoverY, selectedShip.Size, IsHorizontal);
-        
-        // Show hover preview for all cells the ship would occupy
+
         if (IsHorizontal)
         {
-            // Horizontal: check if current cell is in the range [HoverX, HoverX + Size)
+
             if (y == HoverY && x >= HoverX && x < HoverX + selectedShip.Size)
             {
                 return canPlace ? "hover-valid" : "hover-invalid";
@@ -259,13 +256,13 @@
         }
         else
         {
-            // Vertical: check if current cell is in the range [HoverY, HoverY + Size)
+
             if (x == HoverX && y >= HoverY && y < HoverY + selectedShip.Size)
             {
                 return canPlace ? "hover-valid" : "hover-invalid";
             }
         }
-        
+
         return "";
     }
 }

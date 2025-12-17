@@ -15,7 +15,7 @@
 else
 {
     <div class="game-container">
-        <AIGameBoard 
+        <AIGameBoard
             OnRestart="RestartGame"
             OnBackToMenu="GoBack" />
     </div>
@@ -27,7 +27,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // Essayer de restaurer une partie existante
+
         if (!string.IsNullOrEmpty(GameId))
         {
             bool restored = await GameState.TryRestoreGame(GameId);
@@ -39,7 +39,6 @@ else
             }
         }
 
-        // Si pas de partie à restaurer ou échec, rediriger vers le placement
         if (GameState.GameId == null)
         {
             Navigation.NavigateTo("/ship");
@@ -53,7 +52,7 @@ else
     {
         Navigation.NavigateTo("/ship");
     }
-    
+
     private void GoBack()
     {
         Navigation.NavigateTo("/");

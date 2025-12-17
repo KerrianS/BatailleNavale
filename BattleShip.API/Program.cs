@@ -13,9 +13,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowBlazor", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:5208", 
+                "http://localhost:5208",
                 "https://localhost:5208",
-                "http://localhost:5001", 
+                "http://localhost:5001",
                 "https://localhost:5001",
                 "http://localhost:5000")
               .AllowAnyMethod()
@@ -51,27 +51,26 @@ app.MapPost("/game/start", (ILogger<Program> logger, ConcurrentDictionary<string
 {
     int size = gridSize ?? 10;
     logger.LogInformation("[NOUVELLE PARTIE] Demarrage d'une nouvelle partie avec grille {Size}x{Size}...", size, size);
-    
+
     var game = new Game
     {
         PlayerBoard = new Board(size),
         OpponentBoard = new Board(size)
     };
-    
-    // Ne pas générer les bateaux du joueur - ils seront placés via /game/{gameId}/place-ships
+
     logger.LogInformation("[NOUVELLE PARTIE] Plateau du joueur vide - en attente des placements");
-    
+
     GenerateOpponentBoard(game.OpponentBoard, size);
     logger.LogInformation("[NOUVELLE PARTIE] Bateaux de l'adversaire places");
-    
+
     games[game.Id] = game;
-    
+
     int shipCount = CountShips(game.OpponentBoard);
     logger.LogInformation("[NOUVELLE PARTIE] Partie creee avec ID: {GameId}", game.Id);
     logger.LogInformation("[NOUVELLE PARTIE] {ShipCount} cases avec bateaux sur chaque grille", shipCount);
-    
-    return TypedResults.Ok(new 
-    { 
+
+    return TypedResults.Ok(new
+    {
         gameId = game.Id,
         playerBoard = ConvertBoardToDto(game.PlayerBoard, true)
     });
@@ -87,27 +86,26 @@ app.MapGet("/game/{gameId}/state", ([Microsoft.AspNetCore.Mvc.FromRoute] string 
         return Results.NotFound(new { message = "Partie non trouvée" });
     }
 
-    // Compter les bateaux coulés
     var playerSunkShips = game.OpponentBoard.Ships.Where(ship => ship.IsSunk(game.OpponentBoard.Grid)).Count();
     var aiSunkShips = game.PlayerBoard.Ships.Where(ship => ship.IsSunk(game.PlayerBoard.Grid)).Count();
-    
+
     bool gameOver = playerSunkShips >= 5 || aiSunkShips >= 5;
     bool playerWon = playerSunkShips >= 5;
-    
+
     int playerHitCount = CountHits(game.OpponentBoard);
-    
-    logger.LogInformation("[RECUPERATION] Etat: Joueur {PlayerSunk}/5, IA {AISunk}/5, GameOver: {GameOver}", 
+
+    logger.LogInformation("[RECUPERATION] Etat: Joueur {PlayerSunk}/5, IA {AISunk}/5, GameOver: {GameOver}",
         playerSunkShips, aiSunkShips, gameOver);
 
-    return Results.Ok(new 
-    { 
+    return Results.Ok(new
+    {
         gameId = game.Id,
         playerBoard = ConvertBoardToDto(game.PlayerBoard, true),
         opponentBoard = ConvertBoardToDto(game.OpponentBoard, false),
         gameOver,
         playerWon,
         hitCount = playerHitCount,
-        history = game.History.Select(h => new 
+        history = game.History.Select(h => new
         {
             x = h.X,
             y = h.Y,
@@ -129,16 +127,14 @@ app.MapPost("/game/{gameId}/place-ships", ([Microsoft.AspNetCore.Mvc.FromRoute] 
         return Results.NotFound(new { message = "Partie non trouvée" });
     }
 
-    // Réinitialiser complètement le PlayerBoard pour éviter les bateaux aléatoires
     int boardSize = game.PlayerBoard.CurrentSize;
     game.PlayerBoard = new Board(boardSize);
     logger.LogInformation("[PLACEMENT] Plateau du joueur reinitialise");
 
-    // Placer les bateaux du joueur
     foreach (var placement in placements)
     {
         game.PlayerBoard.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal, placement.ShipType);
-        logger.LogInformation("[PLACEMENT] Bateau de taille {Size} de type {ShipType} place a ({X},{Y}) - {Orientation}", 
+        logger.LogInformation("[PLACEMENT] Bateau de taille {Size} de type {ShipType} place a ({X},{Y}) - {Orientation}",
             placement.Size, placement.ShipType, placement.X, placement.Y, placement.IsHorizontal ? "Horizontal" : "Vertical");
     }
 
@@ -174,7 +170,6 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         return Results.BadRequest(new { message = "Case déjà attaquée" });
     }
 
-    // Vérifier les bateaux coulés par le joueur
     List<Ship> previousPlayerSunkShips = game.OpponentBoard.Ships
         .Where(ship => ship.IsSunk(game.OpponentBoard.Grid))
         .ToList();
@@ -238,7 +233,6 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
             var (aiHitResult, _) = game.PlayerBoard.Attack(aiX, aiY);
             aiHit = aiHitResult;
 
-            // Vérifier les bateaux coulés par l'IA
             List<Ship> previousAISunkShips = game.PlayerBoard.Ships
                 .Where(ship => ship.IsSunk(game.PlayerBoard.Grid))
                 .ToList();
@@ -285,8 +279,8 @@ app.MapPost("/game/{gameId}/attack", ([Microsoft.AspNetCore.Mvc.FromRoute] strin
         logger.LogInformation("[FIN DE PARTIE] Partie terminee - Gagnant: {Winner}", playerWon ? "Joueur" : "IA");
     }
 
-    return Results.Ok(new 
-    { 
+    return Results.Ok(new
+    {
         hit,
         message,
         hitCount = playerHitCount,
@@ -303,14 +297,14 @@ app.Run();
 void GenerateOpponentBoard(Board board, int gridSize)
 {
     var random = new Random();
-    var ships = new[] { 
-        (5, ShipType.Carrier), 
-        (4, ShipType.Battleship), 
-        (3, ShipType.Cruiser), 
-        (3, ShipType.Submarine), 
-        (2, ShipType.Destroyer) 
+    var ships = new[] {
+        (5, ShipType.Carrier),
+        (4, ShipType.Battleship),
+        (3, ShipType.Cruiser),
+        (3, ShipType.Submarine),
+        (2, ShipType.Destroyer)
     };
-    
+
     foreach (var (shipSize, shipType) in ships)
     {
         bool placed = false;
@@ -321,7 +315,7 @@ void GenerateOpponentBoard(Board board, int gridSize)
             int x = random.Next(0, gridSize);
             int y = random.Next(0, gridSize);
             bool isHorizontal = random.Next(2) == 0;
-            
+
             if (board.CanPlaceShip(x, y, shipSize, isHorizontal))
             {
                 board.PlaceShip(x, y, shipSize, isHorizontal, shipType);

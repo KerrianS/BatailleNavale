@@ -1,18 +1,39 @@
 @if (IsVisible)
 {
-    <div class="game-over-overlay">
-        <div class="game-over-panel @(IsVictory ? "victory" : "defeat")">
-            <div class="game-over-text">@(IsVictory ? "VICTOIRE !" : "DÉFAITE")</div>
-            <div class="game-over-actions">
-                <button class="game-btn game-btn-primary" @onclick="OnRestart">
-                    Nouvelle Partie
-                </button>
-                <button class="game-btn game-btn-secondary" @onclick="OnBackToMenu">
-                    Menu
-                </button>
+    @if (IsVictory)
+    {
+        <div class="victory-overlay">
+            <div class="particles">
+                @for (int i = 0; i < 50; i++)
+                {
+                    <div class="particle" style="left: @(GetRandomValue())%; animation-delay: @(GetRandomDelay())s; animation-duration: @(GetRandomDuration())s;"></div>
+                }
+            </div>
+
+            <h1 class="victory-title">VICTOIRE !</h1>
+
+            <div class="victory-panel">
+                <p class="victory-message">L'océan est à vous, Capitaine !</p>
+                <div class="victory-actions">
+                    <button class="btn-royal" @onclick="OnRestart">Nouvelle Bataille</button>
+                    <button class="btn-text" @onclick="OnBackToMenu">Retour au Port</button>
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="victory-overlay defeat-mode">
+            <div class="defeat-panel">
+                <h1 class="defeat-title">DÉFAITE...</h1>
+                <p style="color: #bbb; font-size: 1.2rem; margin-bottom: 2rem;">Votre flotte repose par le fond.</p>
+                <div class="defeat-actions">
+                    <button class="btn-retry" @onclick="OnRestart">Prendre sa Revanche</button>
+                    <button class="btn-text" @onclick="OnBackToMenu">Abandonner</button>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -27,4 +48,21 @@
 
     [Parameter]
     public EventCallback OnBackToMenu { get; set; }
+
+    private Random _random = new Random();
+
+    private int GetRandomValue()
+    {
+        return _random.Next(0, 100);
+    }
+
+    private double GetRandomDelay()
+    {
+        return _random.NextDouble() * 2;
+    }
+
+    private double GetRandomDuration()
+    {
+        return 3 + _random.NextDouble() * 3;
+    }
 }

@@ -23,7 +23,7 @@ public class MultiplayerGameService
 
         if (_waitingPlayers.Count > 0)
         {
-            // Match with waiting player
+
             string opponentId = _waitingPlayers.Dequeue();
             string gameId = Guid.NewGuid().ToString();
             string opponentName = _playerNames.GetValueOrDefault(opponentId, "Joueur 1");
@@ -52,7 +52,7 @@ public class MultiplayerGameService
         }
         else
         {
-            // Wait for opponent
+
             _waitingPlayers.Enqueue(playerId);
             await _hubContext.Clients.Client(playerId).SendAsync("WaitingForOpponent");
             return "";
@@ -66,7 +66,6 @@ public class MultiplayerGameService
         var game = _games[gameId];
         Board board = playerId == game.Player1Id ? game.PlayerBoard : game.Player2Board;
 
-        // Clear existing ships
         board.Ships.Clear();
         for (int x = 0; x < board.CurrentSize; x++)
         {
@@ -78,13 +77,11 @@ public class MultiplayerGameService
             }
         }
 
-        // Place ships on board
         foreach (var placement in placements)
         {
             board.PlaceShip(placement.X, placement.Y, placement.Size, placement.IsHorizontal, placement.ShipType);
         }
 
-        // Mark player as ready
         if (playerId == game.Player1Id)
         {
             game.Player1Ready = true;
@@ -94,11 +91,9 @@ public class MultiplayerGameService
             game.Player2Ready = true;
         }
 
-        // Notify opponent
         string opponentId = playerId == game.Player1Id ? game.Player2Id : game.Player1Id;
         await _hubContext.Clients.Client(opponentId).SendAsync("OpponentReady");
 
-        // If both ready, start game
         if (game.Player1Ready && game.Player2Ready)
         {
             await _hubContext.Clients.Clients(game.Player1Id, game.Player2Id)
@@ -113,33 +108,29 @@ public class MultiplayerGameService
 
         var game = _games[gameId];
 
-        // Verify it's player's turn
         if (playerId != game.CurrentTurnPlayerId)
             return (false, false, false);
 
-        // Determine which board to attack
         Board targetBoard = playerId == game.Player1Id ? game.Player2Board : game.PlayerBoard;
 
-        // Process attack
         bool hit = targetBoard.ReceiveAttack(x, y);
         bool sunk = false;
 
         if (hit)
         {
-            // Check if a ship is sunk
+
             foreach (var ship in targetBoard.Ships)
             {
                 if (ship.Positions.Contains((x, y)) && ship.IsSunk(targetBoard.Grid))
                 {
                     sunk = true;
-                    // Mark ship as sunk
+
                     targetBoard.MarkShipAsSunk(x, y);
                     break;
                 }
             }
         }
 
-        // Record in history
         game.History.Add(new AttackHistory
         {
             X = x,
@@ -149,10 +140,8 @@ public class MultiplayerGameService
             Timestamp = DateTime.UtcNow
         });
 
-        // Check for winner
         bool gameOver = targetBoard.AllShipsSunk();
 
-        // Prepare ship data if sunk
         object? sunkShipData = null;
         if (sunk && hit)
         {
@@ -168,7 +157,6 @@ public class MultiplayerGameService
             }
         }
 
-        // Notify both players
         string opponentId = playerId == game.Player1Id ? game.Player2Id : game.Player1Id;
 
         await _hubContext.Clients.Client(playerId).SendAsync("AttackResult", x, y, hit, sunk, gameOver, sunkShipData);
@@ -176,13 +164,13 @@ public class MultiplayerGameService
 
         if (!gameOver)
         {
-            // Switch turn
+
             game.CurrentTurnPlayerId = opponentId;
             await _hubContext.Clients.Client(opponentId).SendAsync("YourTurn");
         }
         else
         {
-            // Game over
+
             await _hubContext.Clients.Client(playerId).SendAsync("GameWon");
             await _hubContext.Clients.Client(opponentId).SendAsync("GameLost");
         }
@@ -196,51 +184,44 @@ public class MultiplayerGameService
             return false;
 
         var game = _games[gameId];
-        
-        // Trouver quel joueur se reconnecte basé sur le nom
+
         if (game.Player1Name == playerName)
         {
-            // Mettre à jour l'ID de connexion du joueur 1
+
             string? oldPlayerId = game.Player1Id;
             game.Player1Id = newPlayerId;
-            
-            // Mettre à jour les mappings
+
             _playerToGame[newPlayerId] = gameId;
             _playerNames[newPlayerId] = playerName;
-            
-            // Supprimer l'ancien mapping si il existe
+
             if (oldPlayerId != null)
             {
                 _playerToGame.Remove(oldPlayerId);
                 _playerNames.Remove(oldPlayerId);
             }
-            
-            // Notifier l'adversaire que le joueur s'est reconnecté
+
             await _hubContext.Clients.Client(game.Player2Id).SendAsync("OpponentReconnected", playerName);
             return true;
         }
         else if (game.Player2Name == playerName)
         {
-            // Mettre à jour l'ID de connexion du joueur 2
+
             string? oldPlayerId = game.Player2Id;
             game.Player2Id = newPlayerId;
-            
-            // Mettre à jour les mappings
+
             _playerToGame[newPlayerId] = gameId;
             _playerNames[newPlayerId] = playerName;
-            
-            // Supprimer l'ancien mapping si il existe
+
             if (oldPlayerId != null)
             {
                 _playerToGame.Remove(oldPlayerId);
                 _playerNames.Remove(oldPlayerId);
             }
-            
-            // Notifier l'adversaire que le joueur s'est reconnecté
+
             await _hubContext.Clients.Client(game.Player1Id).SendAsync("OpponentReconnected", playerName);
             return true;
         }
-        
+
         return false;
     }
 
@@ -260,7 +241,7 @@ public class MultiplayerGameService
 
     public async Task DisconnectPlayerAsync(string playerId)
     {
-        // Remove from waiting queue
+
         if (_waitingPlayers.Contains(playerId))
         {
             var queue = new Queue<string>(_waitingPlayers.Where(p => p != playerId));
@@ -271,7 +252,6 @@ public class MultiplayerGameService
             }
         }
 
-        // Handle disconnection from active game
         if (_playerToGame.ContainsKey(playerId))
         {
             string gameId = _playerToGame[playerId];
@@ -282,7 +262,6 @@ public class MultiplayerGameService
 
                 await _hubContext.Clients.Client(opponentId).SendAsync("OpponentDisconnected");
 
-                // Clean up game
                 _games.Remove(gameId);
                 _playerToGame.Remove(playerId);
                 _playerToGame.Remove(opponentId);
@@ -292,7 +271,7 @@ public class MultiplayerGameService
         }
         else
         {
-            // Clean up player name
+
             _playerNames.Remove(playerId);
         }
     }

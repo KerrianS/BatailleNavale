@@ -18,10 +18,10 @@ public class MultiplayerController : ControllerBase
     [HttpPost("join")]
     public async Task<ActionResult<string>> JoinGame([FromBody] JoinGameRequest request)
     {
-        // For API calls, we need to generate a temporary player ID
+
         string playerId = Guid.NewGuid().ToString();
         string gameId = await _multiplayerService.JoinGameAsync(playerId, request.PlayerName);
-        
+
         return Ok(new { GameId = gameId, PlayerId = playerId });
     }
 
@@ -36,7 +36,7 @@ public class MultiplayerController : ControllerBase
     public async Task<ActionResult<AttackResponse>> Attack([FromBody] MultiplayerAttackRequest request)
     {
         var result = await _multiplayerService.AttackAsync(request.PlayerId, request.GameId, request.X, request.Y);
-        
+
         return Ok(new AttackResponse
         {
             Hit = result.hit,
@@ -90,7 +90,6 @@ public class MultiplayerController : ControllerBase
     }
 }
 
-// DTOs
 public class JoinGameRequest
 {
     public string PlayerName { get; set; } = "";

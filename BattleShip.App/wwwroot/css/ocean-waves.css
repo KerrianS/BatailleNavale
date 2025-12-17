@@ -1,6 +1,4 @@
-/* Ocean Background & Waves */
 
-/* Ocean Background */
 .sea-background {
   position: absolute;
   top: 0;
@@ -26,7 +24,6 @@
   height: 45vh;
 }
 
-/* Smooth SVG Ocean Waves */
 .ocean-waves {
   position: absolute;
   bottom: 0;
@@ -74,7 +71,6 @@
   }
 }
 
-/* Fog Layer */
 .fog-layer {
   position: absolute;
   bottom: 0;

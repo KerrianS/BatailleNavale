@@ -1,0 +1,222 @@
+/* Victory Overlay */
+.victory-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, rgba(16, 24, 45, 0.85) 0%, rgba(0, 0, 0, 0.98) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+    animation: fadeInOverlay 0.5s ease-out;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Victory Title */
+.victory-title {
+    font-family: 'Pirata One', cursive;
+    font-size: 8rem;
+    font-weight: normal;
+    background: linear-gradient(180deg, #ffd700 20%, #ff8c00 50%, #b8860b 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6));
+    text-shadow: 2px 2px 0px #8b4513; 
+    /* text-shadow doesn't work well with background-clip: text usually, so using drop-shadow filter */
+    animation: titleSlam 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    z-index: 2010;
+    margin: 0;
+    line-height: 1;
+    text-transform: uppercase;
+    position: relative;
+    letter-spacing: 4px;
+}
+
+@keyframes titleSlam {
+    0% { transform: scale(5) translateY(-100px); opacity: 0; }
+    50% { transform: scale(0.9); opacity: 1; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Victory Panel */
+.victory-panel {
+    background: rgba(10, 15, 25, 0.8);
+    border: 2px solid rgba(197, 160, 89, 0.5);
+    padding: 2.5rem 4rem;
+    border-radius: 20px;
+    text-align: center;
+    margin-top: 3rem;
+    position: relative;
+    opacity: 0;
+    animation: slideUp 0.8s ease-out 1s forwards;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), 
+                inset 0 0 30px rgba(197, 160, 89, 0.1);
+    z-index: 2010;
+}
+
+.victory-panel::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    border-radius: 20px;
+    background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.6), transparent);
+    z-index: -1;
+    animation: borderShine 3s linear infinite;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes borderShine {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+    100% { opacity: 0.3; }
+}
+
+.victory-message {
+    color: #e0e0e0;
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Buttons */
+.victory-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.btn-royal {
+    background: linear-gradient(to bottom, #ffd700, #daa520);
+    border: none;
+    padding: 1rem 2.5rem;
+    font-family: 'Pirata One', cursive;
+    font-size: 1.8rem;
+    color: #3e2723;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(218, 165, 32, 0.4);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.btn-royal:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(218, 165, 32, 0.6);
+    background: linear-gradient(to bottom, #ffe033, #e6b800);
+}
+
+.btn-text {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 1rem 2rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-text:hover {
+    border-color: #fff;
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+}
+
+/* Particles / Confetti */
+.particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ffd700;
+    border-radius: 50%;
+    animation: particleFall 4s linear infinite;
+    top: -20px;
+}
+
+/* Define randomized positions and delays for particles using nth-child */
+.particle:nth-child(2n) { background: #daa520; width: 8px; height: 8px; }
+.particle:nth-child(3n) { background: #ffdf00; width: 12px; height: 12px; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); border-radius: 0; }
+.particle:nth-child(4n) { background: #fff; width: 6px; height: 6px; box-shadow: 0 0 10px #fff; }
+
+@keyframes particleFall {
+    0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) translateX(20px) rotate(360deg); opacity: 0; }
+}
+
+/* Hardcode some random initial positions for the loop in razor to use css var or just classes if manual */
+/* We will handle randomness in Razor by inline styles or generating many classes */
+
+/* Defeat Styles - slightly enhanced but darker */
+.defeat-mode {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.defeat-panel {
+    background: #1a1a1a;
+    border: 1px solid #444;
+    padding: 3rem;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    animation: fadeIn 0.5s;
+}
+
+.defeat-title {
+    font-family: 'Pirata One', cursive;
+    color: #c0392b;
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    text-shadow: 3px 3px 0 #000;
+}
+
+.btn-retry {
+    background: #c0392b;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    margin-right: 15px;
+}
+
+.btn-retry:hover { background: #e74c3c; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .victory-title { font-size: 5rem; }
+    .victory-panel { padding: 2rem; width: 90%; }
+    .btn-royal { font-size: 1.4rem; padding: 0.8rem 1.5rem; }
+}

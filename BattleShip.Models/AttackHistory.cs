@@ -7,12 +7,12 @@ public class AttackHistory
     public bool Hit { get; set; }
     public bool IsPlayer { get; set; }
     public DateTime Timestamp { get; set; }
-    
+
     public AttackHistory()
     {
         Timestamp = DateTime.UtcNow;
     }
-    
+
     public AttackHistory(int x, int y, bool hit, bool isPlayer)
     {
         X = x;
